@@ -3,6 +3,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { FileMenu } from './FileMenu';
 import { EditMenu } from './EditMenu';
 import { ViewMenu } from './ViewMenu';
+import { SecurityMenu } from './SecurityMenu';
 import './Menu.css';
 
 export const HamburgerMenu: React.FC = () => {
@@ -29,6 +30,7 @@ export const HamburgerMenu: React.FC = () => {
           <FileMenu />
           <EditMenu />
           <ViewMenu />
+          <SecurityMenu />
         </div>
       </div>
     </>

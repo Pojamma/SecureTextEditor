@@ -2,27 +2,21 @@ export interface DocumentMetadata {
   created: string;
   modified: string;
   filename: string;
+  encrypted?: boolean;
+  encryptedAt?: string;
 }
 
 export interface PlainDocument {
-  version: '1.0';
-  encrypted: false;
   content: string;
   metadata: DocumentMetadata;
 }
 
 export interface EncryptedDocument {
-  version: '1.0';
+  version: number;
   encrypted: true;
-  algorithm: 'AES-256-GCM';
-  kdf: 'PBKDF2-SHA256';
-  kdfParams: {
-    iterations: 600000;
-    salt: string; // Base64 encoded
-  };
-  iv: string; // Base64 encoded
-  ciphertext: string; // Base64 encoded
-  authTag: string; // Base64 encoded (GCM auth tag)
+  ciphertext: string; // Base64 encoded (includes GCM auth tag)
+  salt: string; // Base64 encoded (for PBKDF2)
+  iv: string; // Base64 encoded (96-bit nonce)
   metadata: DocumentMetadata;
 }
 
