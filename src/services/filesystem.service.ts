@@ -6,9 +6,36 @@
  */
 
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
 import { encryptDocument, decryptDocument, isEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
+
+/**
+ * Check and request filesystem permissions (Android only)
+ */
+async function checkPermissions(): Promise<boolean> {
+  // Only needed on Android
+  if (Capacitor.getPlatform() !== 'android') {
+    return true;
+  }
+
+  try {
+    // Check permissions
+    const permission = await Filesystem.checkPermissions();
+
+    if (permission.publicStorage === 'granted') {
+      return true;
+    }
+
+    // Request permissions if not granted
+    const requested = await Filesystem.requestPermissions();
+    return requested.publicStorage === 'granted';
+  } catch (error) {
+    console.error('Permission check failed:', error);
+    return false;
+  }
+}
 
 /**
  * Read a file from the filesystem
@@ -18,6 +45,12 @@ export async function readFile(
   path: string
 ): Promise<{ document: OpenDocument; requiresPassword: boolean; encryptedData?: EncryptedDocument }> {
   try {
+    // Check permissions first
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
     // Read file content
     const result = await Filesystem.readFile({
       path: path,
@@ -139,6 +172,12 @@ export async function saveFile(
   password?: string
 ): Promise<void> {
   try {
+    // Check permissions first
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
     let content: string;
     const path = document.path || `${document.metadata.filename}`;
 
@@ -189,6 +228,12 @@ export async function saveFileAs(
   password?: string
 ): Promise<string> {
   try {
+    // Check permissions first
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
     const newPath = newFilename;
 
     let content: string;
