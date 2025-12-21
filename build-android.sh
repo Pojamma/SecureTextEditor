@@ -149,31 +149,26 @@ if [ $? -eq 0 ]; then
     APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
 
     if [ -n "$APK_PATH" ]; then
-        APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
-        echo -e "${GREEN}APK Location:${NC} $APK_PATH"
-        echo -e "${GREEN}APK Size:${NC} $APK_SIZE"
-        echo ""
-        echo "📱 To install on your phone:"
-        echo "  1. Enable USB debugging on your Android device"
-        echo "  2. Connect your phone via USB"
-        echo "  3. Run: adb install -r $APK_PATH"
-        echo ""
-        echo "Or copy the APK to your phone and install manually."
-        echo ""
+        # Copy APK to current directory with timestamp
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        OUTPUT_APK="SecureTextEditor_${TIMESTAMP}.apk"
 
-        # Check if adb is available
-        if command -v adb &> /dev/null; then
-            echo -e "${BLUE}Would you like to install the APK now? (y/n)${NC}"
-            read -r response
-            if [[ "$response" =~ ^[Yy]$ ]]; then
-                print_info "Installing APK..."
-                adb install -r "$APK_PATH"
-                if [ $? -eq 0 ]; then
-                    print_success "APK installed successfully on connected device!"
-                else
-                    print_warning "Installation failed. Please install manually."
-                fi
-            fi
+        print_info "Copying APK to current directory..."
+        cp "$APK_PATH" "$OUTPUT_APK"
+
+        if [ $? -eq 0 ]; then
+            APK_SIZE=$(du -h "$OUTPUT_APK" | cut -f1)
+            print_success "APK copied to: $OUTPUT_APK"
+            echo ""
+            echo -e "${GREEN}APK Location:${NC} $(pwd)/$OUTPUT_APK"
+            echo -e "${GREEN}APK Size:${NC} $APK_SIZE"
+            echo ""
+            echo "📱 Transfer this APK to your phone via Google Drive and install."
+        else
+            print_warning "Failed to copy APK to current directory"
+            APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+            echo -e "${GREEN}APK Location:${NC} $APK_PATH"
+            echo -e "${GREEN}APK Size:${NC} $APK_SIZE"
         fi
     else
         print_warning "APK file not found in expected location"

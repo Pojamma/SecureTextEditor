@@ -65,3 +65,6 @@ Desktop.ini
 # Misc
 *.orig
 .vercel
+
+# Generated APK files
+*.apk
