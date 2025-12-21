@@ -316,7 +316,9 @@ Start typing to edit this document...`,
       // Focus the editor
       editorRef.current.focus();
     }
-  }, [activeDocumentId, activeDoc]);
+    // Only restore when switching documents (activeDocumentId changes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDocumentId]);
 
   // Handle content changes
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
