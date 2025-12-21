@@ -7,6 +7,8 @@ import { OpenDocument } from './types/document.types';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
+import { EditorTabs } from './components/EditorTabs';
+import { SessionService } from './services/session.service';
 import './App.css';
 
 const App: React.FC = () => {
@@ -14,7 +16,7 @@ const App: React.FC = () => {
   const [cursorInfo, setCursorInfo] = useState({ line: 1, column: 1 });
 
   // Store hooks
-  const { documents, activeDocumentId, addDocument, updateContent, getActiveDocument, closeDocument } =
+  const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar } = useSettingsStore();
   const { toggleMenu, showSearch, showNotification } = useUIStore();
@@ -59,8 +61,8 @@ const App: React.FC = () => {
       key: 'w',
       ctrl: true,
       action: () => {
-        if (documents.length > 0 && documents[0]) {
-          closeDocument(documents[0].id);
+        if (activeDocumentId) {
+          closeDocument(activeDocumentId);
           showNotification('Tab closed', 'info');
         }
       },
@@ -99,11 +101,123 @@ const App: React.FC = () => {
       },
       description: 'Reset Zoom',
     },
+    // Tab navigation
+    {
+      key: 'Tab',
+      ctrl: true,
+      action: () => {
+        if (documents.length <= 1) return;
+        const currentIndex = documents.findIndex(doc => doc.id === activeDocumentId);
+        const nextIndex = (currentIndex + 1) % documents.length;
+        setActiveDocument(documents[nextIndex].id);
+      },
+      description: 'Next Tab',
+    },
+    {
+      key: 'Tab',
+      ctrl: true,
+      shift: true,
+      action: () => {
+        if (documents.length <= 1) return;
+        const currentIndex = documents.findIndex(doc => doc.id === activeDocumentId);
+        const prevIndex = currentIndex - 1 < 0 ? documents.length - 1 : currentIndex - 1;
+        setActiveDocument(documents[prevIndex].id);
+      },
+      description: 'Previous Tab',
+    },
+    // Ctrl+1 through Ctrl+9 to go to specific tab
+    {
+      key: '1',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 1) setActiveDocument(documents[0].id);
+      },
+      description: 'Go to Tab 1',
+    },
+    {
+      key: '2',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 2) setActiveDocument(documents[1].id);
+      },
+      description: 'Go to Tab 2',
+    },
+    {
+      key: '3',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 3) setActiveDocument(documents[2].id);
+      },
+      description: 'Go to Tab 3',
+    },
+    {
+      key: '4',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 4) setActiveDocument(documents[3].id);
+      },
+      description: 'Go to Tab 4',
+    },
+    {
+      key: '5',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 5) setActiveDocument(documents[4].id);
+      },
+      description: 'Go to Tab 5',
+    },
+    {
+      key: '6',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 6) setActiveDocument(documents[5].id);
+      },
+      description: 'Go to Tab 6',
+    },
+    {
+      key: '7',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 7) setActiveDocument(documents[6].id);
+      },
+      description: 'Go to Tab 7',
+    },
+    {
+      key: '8',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 8) setActiveDocument(documents[7].id);
+      },
+      description: 'Go to Tab 8',
+    },
+    {
+      key: '9',
+      ctrl: true,
+      action: () => {
+        if (documents.length >= 9) setActiveDocument(documents[8].id);
+      },
+      description: 'Go to Tab 9',
+    },
   ]);
 
-  // Initialize with a welcome document
+  // Restore session on app launch
   useEffect(() => {
-    if (documents.length === 0) {
+    // Only run once on mount
+    const session = SessionService.loadSession();
+
+    if (session && session.documents.length > 0 && !SessionService.isSessionExpired()) {
+      // Restore documents and active document
+      restoreSession(session.documents, session.activeDocumentId);
+
+      // Restore UI settings
+      if (session.uiState) {
+        setTheme(session.uiState.theme);
+        setFontSize(session.uiState.fontSize);
+      }
+
+      showNotification('Session restored', 'success');
+    } else {
+      // No valid session, create welcome document
       const welcomeDoc: OpenDocument = {
         id: generateId(),
         path: '',
@@ -113,10 +227,10 @@ const App: React.FC = () => {
 
 This is a secure, encrypted text editor for Android and Windows.
 
-Current Theme: ${theme} (Try changing it from the menu!)
-
 Features Available:
-• Multi-tab document editing
+• Multi-tab document editing with keyboard shortcuts
+• Tab navigation (Ctrl+Tab, Ctrl+1-9)
+• Session persistence (auto-restore on launch)
 • 6 beautiful themes (Light, Dark, Solarized, Dracula, Nord)
 • Persistent settings
 • Real-time character and line counting
@@ -140,7 +254,69 @@ Start typing to edit this document...`,
       };
       addDocument(welcomeDoc);
     }
-  }, [documents.length, addDocument, theme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Save session whenever state changes
+  useEffect(() => {
+    // Don't save if there are no documents (initial state)
+    if (documents.length === 0) return;
+
+    const saveSession = () => {
+      SessionService.saveSession({
+        documents,
+        activeDocumentId,
+        uiState: {
+          theme,
+          fontSize,
+          statusBar,
+        },
+      });
+    };
+
+    // Debounce session saves to avoid excessive writes
+    const timeoutId = setTimeout(saveSession, 500);
+    return () => clearTimeout(timeoutId);
+  }, [documents, activeDocumentId, theme, fontSize, statusBar]);
+
+  // Save session before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (documents.length > 0) {
+        SessionService.saveSession({
+          documents,
+          activeDocumentId,
+          uiState: {
+            theme,
+            fontSize,
+            statusBar,
+          },
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [documents, activeDocumentId, theme, fontSize, statusBar]);
+
+  // Restore cursor and scroll position when switching documents
+  useEffect(() => {
+    if (editorRef.current && activeDoc) {
+      // Restore cursor position
+      const cursorPos = activeDoc.cursorPosition || 0;
+      editorRef.current.setSelectionRange(cursorPos, cursorPos);
+
+      // Restore scroll position
+      editorRef.current.scrollTop = activeDoc.scrollPosition || 0;
+
+      // Update cursor info display
+      const pos = getCursorPosition(editorRef.current);
+      setCursorInfo(pos);
+
+      // Focus the editor
+      editorRef.current.focus();
+    }
+  }, [activeDocumentId, activeDoc]);
 
   // Handle content changes
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -151,9 +327,21 @@ Start typing to edit this document...`,
 
   // Update cursor position
   const handleCursorMove = () => {
-    if (editorRef.current) {
+    if (editorRef.current && activeDocumentId) {
       const pos = getCursorPosition(editorRef.current);
       setCursorInfo(pos);
+
+      // Save cursor position to document
+      const selectionStart = editorRef.current.selectionStart;
+      updateDocument(activeDocumentId, { cursorPosition: selectionStart });
+    }
+  };
+
+  // Handle scroll position changes
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (activeDocumentId) {
+      const scrollTop = e.currentTarget.scrollTop;
+      updateDocument(activeDocumentId, { scrollPosition: scrollTop });
     }
   };
 
@@ -216,6 +404,8 @@ Start typing to edit this document...`,
         </div>
       </header>
 
+      <EditorTabs />
+
       <main className="main-content">
         <div className="editor-container">
           <textarea
@@ -227,6 +417,7 @@ Start typing to edit this document...`,
             onChange={handleContentChange}
             onKeyUp={handleCursorMove}
             onClick={handleCursorMove}
+            onScroll={handleScroll}
           />
         </div>
       </main>

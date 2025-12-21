@@ -14,6 +14,7 @@ interface DocumentState {
   markAsModified: (id: string, modified: boolean) => void;
   closeDocument: (id: string) => void;
   closeAllDocuments: () => void;
+  restoreSession: (documents: OpenDocument[], activeDocumentId: string | null) => void;
 
   // Getters
   getActiveDocument: () => OpenDocument | null;
@@ -69,6 +70,11 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   closeAllDocuments: () => set({
     documents: [],
     activeDocumentId: null,
+  }),
+
+  restoreSession: (documents, activeDocumentId) => set({
+    documents,
+    activeDocumentId,
   }),
 
   // Getters
