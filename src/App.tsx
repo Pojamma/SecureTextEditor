@@ -4,6 +4,9 @@ import { useSettingsStore } from './stores/settingsStore';
 import { useUIStore } from './stores/uiStore';
 import { generateId, formatDate, getCursorPosition, countCharacters } from './utils/helpers';
 import { OpenDocument } from './types/document.types';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { HamburgerMenu } from './components/Menus/HamburgerMenu';
+import { Notification } from './components/Notification';
 import './App.css';
 
 const App: React.FC = () => {
@@ -11,13 +14,92 @@ const App: React.FC = () => {
   const [cursorInfo, setCursorInfo] = useState({ line: 1, column: 1 });
 
   // Store hooks
-  const { documents, activeDocumentId, addDocument, updateContent, getActiveDocument } =
+  const { documents, activeDocumentId, addDocument, updateContent, getActiveDocument, closeDocument } =
     useDocumentStore();
-  const theme = useSettingsStore((state) => state.theme);
-  const setTheme = useSettingsStore((state) => state.setTheme);
-  const { toggleMenu } = useUIStore();
+  const { theme, setTheme, fontSize, setFontSize, statusBar } = useSettingsStore();
+  const { toggleMenu, showSearch, showNotification } = useUIStore();
 
   const activeDoc = getActiveDocument();
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      ctrl: true,
+      action: () => {
+        const newDoc: OpenDocument = {
+          id: generateId(),
+          path: '',
+          source: 'temp',
+          encrypted: false,
+          content: '',
+          modified: false,
+          cursorPosition: 0,
+          scrollPosition: 0,
+          metadata: {
+            created: formatDate(),
+            modified: formatDate(),
+            filename: 'Untitled.txt',
+          },
+        };
+        addDocument(newDoc);
+        showNotification('New document created', 'success');
+      },
+      description: 'New Document',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      action: () => {
+        showNotification('Save functionality coming soon!', 'info');
+      },
+      description: 'Save',
+    },
+    {
+      key: 'w',
+      ctrl: true,
+      action: () => {
+        if (documents.length > 0 && documents[0]) {
+          closeDocument(documents[0].id);
+          showNotification('Tab closed', 'info');
+        }
+      },
+      description: 'Close Tab',
+    },
+    {
+      key: 'f',
+      ctrl: true,
+      action: () => {
+        showSearch();
+        showNotification('Search coming soon!', 'info');
+      },
+      description: 'Find',
+    },
+    {
+      key: '=',
+      ctrl: true,
+      action: () => {
+        setFontSize(Math.min(fontSize + 2, 24));
+      },
+      description: 'Zoom In',
+    },
+    {
+      key: '-',
+      ctrl: true,
+      action: () => {
+        setFontSize(Math.max(fontSize - 2, 8));
+      },
+      description: 'Zoom Out',
+    },
+    {
+      key: '0',
+      ctrl: true,
+      action: () => {
+        setFontSize(14);
+      },
+      description: 'Reset Zoom',
+    },
+  ]);
 
   // Initialize with a welcome document
   useEffect(() => {
@@ -88,31 +170,46 @@ Start typing to edit this document...`,
 
   return (
     <div className="app">
+      <HamburgerMenu />
+      <Notification />
+
       <header className="header">
         <div className="toolbar">
           <button
             className="menu-button"
             onClick={() => toggleMenu('hamburgerMenu')}
-            title="Menu"
+            title="Menu (or try Ctrl+N for new doc)"
           >
             ☰
           </button>
           <h1 className="app-title">SecureTextEditor</h1>
           <div className="toolbar-actions">
-            <button className="icon-button" title="Search">
+            <button
+              className="icon-button"
+              title="Search (Ctrl+F)"
+              onClick={() => showNotification('Search coming soon!', 'info')}
+            >
               🔍
             </button>
             <button
               className="icon-button"
               onClick={cycleTheme}
-              title={`Current: ${theme} (Click to change)`}
+              title={`Current: ${theme} (Click to change or use View menu)`}
             >
               🎨
             </button>
-            <button className="icon-button" title="Settings">
+            <button
+              className="icon-button"
+              title="Settings"
+              onClick={() => showNotification('Settings dialog coming soon!', 'info')}
+            >
               ⚙️
             </button>
-            <button className="icon-button" title="Help">
+            <button
+              className="icon-button"
+              title="Help"
+              onClick={() => showNotification('Help system coming soon!', 'info')}
+            >
               ❓
             </button>
           </div>
@@ -124,7 +221,8 @@ Start typing to edit this document...`,
           <textarea
             ref={editorRef}
             className="editor"
-            placeholder="Start typing..."
+            style={{ fontSize: `${fontSize}px` }}
+            placeholder="Start typing... (Try Ctrl+N for new document, or click the ☰ menu)"
             value={activeDoc?.content || ''}
             onChange={handleContentChange}
             onKeyUp={handleCursorMove}
@@ -133,13 +231,15 @@ Start typing to edit this document...`,
         </div>
       </main>
 
-      <footer className="status-bar">
-        <span>
-          Line: {cursorInfo.line} | Col: {cursorInfo.column} | {charCount} chars |{' '}
-          {lineCount} lines | {activeDoc?.metadata.filename || 'Untitled'}{' '}
-          {activeDoc?.modified ? '●' : ''}
-        </span>
-      </footer>
+      {statusBar && (
+        <footer className="status-bar">
+          <span>
+            Line: {cursorInfo.line} | Col: {cursorInfo.column} | {charCount} chars |{' '}
+            {lineCount} lines | {activeDoc?.metadata.filename || 'Untitled'}{' '}
+            {activeDoc?.modified ? '●' : ''}
+          </span>
+        </footer>
+      )}
     </div>
   );
 };
