@@ -1,27 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDocumentStore } from '@/stores/documentStore';
 import { useUIStore } from '@/stores/uiStore';
 import { generateId, formatDate } from '@/utils/helpers';
-import { OpenDocument, EncryptedDocument } from '@/types/document.types';
+import { OpenDocument, EncryptedDocument, PlainDocument } from '@/types/document.types';
 import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
+import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
 import { readFile, decryptFile, saveFile, saveFileAs } from '@/services/filesystem.service';
+import {
+  isAuthenticated,
+  signIn,
+  signOut,
+  downloadFile
+} from '@/services/googleDrive.service';
+import { isEncrypted, decryptDocument } from '@/services/encryption.service';
 
 export const FileMenu: React.FC = () => {
   const [expanded, setExpanded] = useState(true);
   const [showFilePicker, setShowFilePicker] = useState(false);
+  const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [pendingEncryptedData, setPendingEncryptedData] = useState<{
     data: EncryptedDocument;
     path: string;
   } | null>(null);
   const [saveAsMode, setSaveAsMode] = useState(false);
+  const [driveAuthenticated, setDriveAuthenticated] = useState(false);
+  const [pendingDriveFile, setPendingDriveFile] = useState<{
+    fileId: string;
+    filename: string;
+  } | null>(null);
 
   const { addDocument, closeDocument, closeAllDocuments, documents, hasUnsavedChanges, getActiveDocument, updateDocument, activeDocumentId } =
     useDocumentStore();
   const { closeAllMenus, showNotification } = useUIStore();
 
   const activeDoc = getActiveDocument();
+
+  // Check Drive authentication status
+  useEffect(() => {
+    isAuthenticated().then(setDriveAuthenticated);
+  }, []);
 
   const handleNewDocument = () => {
     const newDoc: OpenDocument = {
@@ -97,9 +116,143 @@ export const FileMenu: React.FC = () => {
     }
   };
 
-  const handleOpenDrive = () => {
-    showNotification('Google Drive integration coming soon!', 'info');
+  const handleConnectDrive = async () => {
+    try {
+      const success = await signIn();
+      if (success) {
+        setDriveAuthenticated(true);
+        showNotification('Connected to Google Drive!', 'success');
+      } else {
+        showNotification('Failed to connect to Google Drive', 'error');
+      }
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to connect to Google Drive',
+        'error'
+      );
+    }
     closeAllMenus();
+  };
+
+  const handleDisconnectDrive = async () => {
+    try {
+      await signOut();
+      setDriveAuthenticated(false);
+      showNotification('Disconnected from Google Drive', 'info');
+    } catch (error) {
+      showNotification('Failed to disconnect from Google Drive', 'error');
+    }
+    closeAllMenus();
+  };
+
+  const handleOpenDrive = async () => {
+    if (!driveAuthenticated) {
+      showNotification('Please connect to Google Drive first', 'warning');
+      handleConnectDrive();
+      return;
+    }
+    setShowDrivePicker(true);
+  };
+
+  const handleDriveFileSelect = async (fileId: string, filename: string) => {
+    setShowDrivePicker(false);
+    try {
+      const content = await downloadFile(fileId);
+
+      // Try to parse as JSON (could be encrypted or plain)
+      let parsedData;
+      try {
+        parsedData = JSON.parse(content);
+      } catch {
+        parsedData = null;
+      }
+
+      // Check if file is encrypted
+      if (parsedData && isEncrypted(parsedData)) {
+        // Show password dialog for encrypted file
+        setPendingDriveFile({ fileId, filename });
+        setPendingEncryptedData({
+          data: parsedData,
+          path: fileId, // Use fileId as path for Drive files
+        });
+        setShowPasswordDialog(true);
+      } else if (parsedData && 'content' in parsedData && 'metadata' in parsedData) {
+        // Plain document saved as JSON
+        const plainDoc = parsedData as PlainDocument;
+        const document: OpenDocument = {
+          id: generateId(),
+          path: fileId,
+          source: 'drive',
+          encrypted: false,
+          content: plainDoc.content,
+          modified: false,
+          cursorPosition: 0,
+          scrollPosition: 0,
+          metadata: plainDoc.metadata,
+        };
+        addDocument(document);
+        showNotification(`Opened "${filename}" from Google Drive`, 'success');
+      } else {
+        // Plain text file
+        const document: OpenDocument = {
+          id: generateId(),
+          path: fileId,
+          source: 'drive',
+          encrypted: false,
+          content: content,
+          modified: false,
+          cursorPosition: 0,
+          scrollPosition: 0,
+          metadata: {
+            filename: filename,
+            created: formatDate(),
+            modified: formatDate(),
+          },
+        };
+        addDocument(document);
+        showNotification(`Opened "${filename}" from Google Drive`, 'success');
+      }
+      closeAllMenus();
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to open file from Google Drive',
+        'error'
+      );
+    }
+  };
+
+  const handleDriveDecryptPassword = async (password: string) => {
+    if (!pendingEncryptedData || !pendingDriveFile) return;
+
+    try {
+      const plainDoc = await decryptDocument(pendingEncryptedData.data, password);
+      const document: OpenDocument = {
+        id: generateId(),
+        path: pendingDriveFile.fileId,
+        source: 'drive',
+        encrypted: true,
+        content: plainDoc.content,
+        modified: false,
+        cursorPosition: 0,
+        scrollPosition: 0,
+        metadata: plainDoc.metadata,
+      };
+      addDocument(document);
+      showNotification(
+        `Opened and decrypted "${pendingDriveFile.filename}" from Google Drive`,
+        'success'
+      );
+      closeAllMenus();
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Decryption failed',
+        'error'
+      );
+    } finally {
+      setShowPasswordDialog(false);
+      setPendingEncryptedData(null);
+      setPendingDriveFile(null);
+    }
   };
 
   const handleSave = async () => {
@@ -281,6 +434,18 @@ export const FileMenu: React.FC = () => {
             <button className="menu-item" onClick={handleCloseAll}>
               <span>Close All Tabs</span>
             </button>
+
+            <div className="menu-separator" />
+
+            {driveAuthenticated ? (
+              <button className="menu-item" onClick={handleDisconnectDrive}>
+                <span>✓ Connected to Google Drive</span>
+              </button>
+            ) : (
+              <button className="menu-item" onClick={handleConnectDrive}>
+                <span>Connect to Google Drive</span>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -293,17 +458,36 @@ export const FileMenu: React.FC = () => {
         />
       )}
 
+      {/* Drive File Picker Dialog */}
+      {showDrivePicker && (
+        <DriveFilePickerDialog
+          onSelect={handleDriveFileSelect}
+          onCancel={() => setShowDrivePicker(false)}
+        />
+      )}
+
       {/* Password Dialog for decryption or save */}
       {showPasswordDialog && (
         <PasswordDialog
           mode={pendingEncryptedData ? 'decrypt' : 'encrypt'}
-          onConfirm={pendingEncryptedData ? handleDecryptPassword : handleSavePassword}
+          onConfirm={
+            pendingDriveFile
+              ? handleDriveDecryptPassword
+              : pendingEncryptedData
+              ? handleDecryptPassword
+              : handleSavePassword
+          }
           onCancel={() => {
             setShowPasswordDialog(false);
             setPendingEncryptedData(null);
+            setPendingDriveFile(null);
             setSaveAsMode(false);
           }}
-          filename={pendingEncryptedData?.data.metadata.filename || activeDoc?.metadata.filename}
+          filename={
+            pendingDriveFile?.filename ||
+            pendingEncryptedData?.data.metadata.filename ||
+            activeDoc?.metadata.filename
+          }
         />
       )}
     </>
