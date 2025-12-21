@@ -7,6 +7,14 @@
 
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+
+// Use app data directory on mobile (no permissions needed), Documents on web
+const getDirectory = () => {
+  const platform = Capacitor.getPlatform();
+  // On mobile, use app's private data directory (no permissions needed)
+  // On web, use Documents
+  return platform === 'web' ? Directory.Documents : Directory.Data;
+};
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
 import { encryptDocument, decryptDocument, isEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
@@ -54,7 +62,7 @@ export async function readFile(
     // Read file content
     const result = await Filesystem.readFile({
       path: path,
-      directory: Directory.Documents,
+      directory: getDirectory(),
       encoding: Encoding.UTF8,
     });
 
@@ -210,8 +218,9 @@ export async function saveFile(
     await Filesystem.writeFile({
       path: path,
       data: content,
-      directory: Directory.Documents,
+      directory: getDirectory(),
       encoding: Encoding.UTF8,
+      recursive: true, // Create parent directories if needed
     });
   } catch (error) {
     console.error('Error saving file:', error);
@@ -269,8 +278,9 @@ export async function saveFileAs(
     await Filesystem.writeFile({
       path: newPath,
       data: content,
-      directory: Directory.Documents,
+      directory: getDirectory(),
       encoding: Encoding.UTF8,
+      recursive: true, // Create parent directories if needed
     });
 
     return newPath;
@@ -287,7 +297,7 @@ export async function fileExists(path: string): Promise<boolean> {
   try {
     await Filesystem.stat({
       path: path,
-      directory: Directory.Documents,
+      directory: getDirectory(),
     });
     return true;
   } catch {
@@ -302,7 +312,7 @@ export async function listFiles(): Promise<string[]> {
   try {
     const result = await Filesystem.readdir({
       path: '',
-      directory: Directory.Documents,
+      directory: getDirectory(),
     });
 
     return result.files
@@ -321,7 +331,7 @@ export async function deleteFile(path: string): Promise<void> {
   try {
     await Filesystem.deleteFile({
       path: path,
-      directory: Directory.Documents,
+      directory: getDirectory(),
     });
   } catch (error) {
     console.error('Error deleting file:', error);
