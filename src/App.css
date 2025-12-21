@@ -1,0 +1,120 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+
+/* Header / Toolbar */
+.header {
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 12px;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.menu-button:hover {
+  background-color: #3e3e42;
+}
+
+.app-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+  color: #d4d4d4;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: #d4d4d4;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+  background-color: #3e3e42;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
+  background-color: #252526;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  padding: 16px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+}
+
+.editor::placeholder {
+  color: #6a6a6a;
+}
+
+/* Status Bar */
+.status-bar {
+  background-color: #007acc;
+  color: #ffffff;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-top: 1px solid #3e3e42;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .app-title {
+    font-size: 14px;
+  }
+
+  .editor {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .status-bar {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}
