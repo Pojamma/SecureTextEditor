@@ -1,0 +1,49 @@
+{
+  "appId": "com.pojamma.securetexteditor",
+  "productName": "SecureTextEditor",
+  "copyright": "Copyright © 2024 Pojamma",
+  "directories": {
+    "buildResources": "resources",
+    "output": "dist"
+  },
+  "files": [
+    "assets/**/*",
+    "build/**/*",
+    "capacitor.config.*",
+    "app/**/*"
+  ],
+  "publish": {
+    "provider": "github",
+    "owner": "Pojamma",
+    "repo": "SecureTextEditor"
+  },
+  "nsis": {
+    "allowElevation": true,
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "SecureTextEditor",
+    "installerIcon": "assets/appIcon.ico",
+    "uninstallerIcon": "assets/appIcon.ico"
+  },
+  "win": {
+    "target": ["nsis", "portable"],
+    "icon": "assets/appIcon.ico",
+    "publisherName": "Pojamma",
+    "verifyUpdateCodeSignature": false
+  },
+  "portable": {
+    "artifactName": "SecureTextEditor-Portable-${version}.exe"
+  },
+  "mac": {
+    "category": "public.app-category.productivity",
+    "target": "dmg",
+    "icon": "assets/appIcon.icns"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Office",
+    "icon": "assets/appIcon.png"
+  }
+}
