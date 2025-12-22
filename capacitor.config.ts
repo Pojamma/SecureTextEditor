@@ -10,10 +10,16 @@ const config: CapacitorConfig = {
       androidDisplayName: 'SecureTextEditor Storage'
     },
     SplashScreen: {
-      launchShowDuration: 1000,
-      backgroundColor: '#1E1E1E',
+      launchShowDuration: 2000,
+      backgroundColor: '#1e3a8a',
       androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP'
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      androidSpinnerStyle: 'large',
+      iosSpinnerStyle: 'large',
+      spinnerColor: '#3b82f6',
+      splashFullScreen: true,
+      splashImmersive: true
     }
   }
 };
