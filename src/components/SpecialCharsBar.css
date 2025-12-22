@@ -1,0 +1,82 @@
+.special-chars-bar {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.special-chars-container {
+  display: flex;
+  gap: 6px;
+  min-width: min-content;
+}
+
+.special-char-button {
+  min-width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.special-char-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.special-char-button:active {
+  transform: translateY(0);
+  background: var(--accent-color);
+  color: var(--bg-primary);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .special-chars-bar {
+    padding: 6px;
+  }
+
+  .special-char-button {
+    min-width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .special-chars-container {
+    gap: 4px;
+  }
+}
+
+/* Ensure scrollbar is visible but subtle */
+.special-chars-bar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.special-chars-bar::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+.special-chars-bar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.special-chars-bar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

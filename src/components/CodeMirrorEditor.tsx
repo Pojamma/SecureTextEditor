@@ -16,6 +16,7 @@ export interface CodeMirrorEditorProps {
 
 export interface CodeMirrorEditorHandle {
   openSearch: () => void;
+  insertText: (text: string) => void;
 }
 
 export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(({
@@ -34,6 +35,17 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     openSearch: () => {
       if (viewRef.current) {
         openSearchPanel(viewRef.current);
+      }
+    },
+    insertText: (text: string) => {
+      if (viewRef.current) {
+        const view = viewRef.current;
+        const selection = view.state.selection.main;
+        view.dispatch({
+          changes: { from: selection.from, to: selection.to, insert: text },
+          selection: { anchor: selection.from + text.length },
+        });
+        view.focus();
       }
     },
   }));

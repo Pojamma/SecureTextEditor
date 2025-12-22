@@ -10,6 +10,7 @@ import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { PasswordDialog } from './components/Dialogs/PasswordDialog';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
+import { SpecialCharsBar } from './components/SpecialCharsBar';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
 import './App.css';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
-  const { theme, setTheme, fontSize, setFontSize, statusBar } = useSettingsStore();
+  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
   const { toggleMenu, showNotification } = useUIStore();
 
   const activeDoc = getActiveDocument();
@@ -358,6 +359,11 @@ Start typing to edit this document...`,
   // Search is now handled natively by CodeMirror (Ctrl+F)
   // Note: CodeMirror manages cursor and scroll position internally through its state
 
+  // Handle special character insertion
+  const handleSpecialCharClick = (char: string) => {
+    editorRef.current?.insertText(char);
+  };
+
   // Handle content changes (CodeMirror passes string directly)
   const handleContentChange = (value: string) => {
     if (activeDocumentId) {
@@ -467,6 +473,10 @@ Start typing to edit this document...`,
           />
         </div>
       </main>
+
+      {specialCharsVisible && (
+        <SpecialCharsBar onCharacterClick={handleSpecialCharClick} />
+      )}
 
       {statusBar && (
         <footer className="status-bar">
