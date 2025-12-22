@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useDocumentStore } from './stores/documentStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUIStore } from './stores/uiStore';
@@ -10,17 +10,19 @@ import { useSwipeGesture } from './hooks/useSwipeGesture';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
-import { PasswordDialog } from './components/Dialogs/PasswordDialog';
-import { StatisticsDialog } from './components/StatisticsDialog';
-import { SpecialCharDialog } from './components/SpecialCharDialog';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
-import { SpecialCharsBar } from './components/SpecialCharsBar';
-import { SearchAllTabsPanel } from './components/SearchAllTabsPanel';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
 import { shareDocument, copyToClipboard } from './utils/exportUtils';
 import './App.css';
+
+// Lazy load components that aren't immediately needed
+const PasswordDialog = lazy(() => import('./components/Dialogs/PasswordDialog').then(m => ({ default: m.PasswordDialog })));
+const StatisticsDialog = lazy(() => import('./components/StatisticsDialog').then(m => ({ default: m.StatisticsDialog })));
+const SpecialCharDialog = lazy(() => import('./components/SpecialCharDialog').then(m => ({ default: m.SpecialCharDialog })));
+const SpecialCharsBar = lazy(() => import('./components/SpecialCharsBar').then(m => ({ default: m.SpecialCharsBar })));
+const SearchAllTabsPanel = lazy(() => import('./components/SearchAllTabsPanel').then(m => ({ default: m.SearchAllTabsPanel })));
 
 const App: React.FC = () => {
   const editorRef = useRef<CodeMirrorEditorHandle>(null);
@@ -524,27 +526,37 @@ Start typing to edit this document...`,
 
       {/* Password dialog for decrypting encrypted files from session */}
       {showPasswordDialog && (
-        <PasswordDialog
-          mode="decrypt"
-          onConfirm={handlePasswordConfirm}
-          onCancel={handlePasswordCancel}
-          filename={activeDoc?.metadata.filename}
-        />
+        <Suspense fallback={<div />}>
+          <PasswordDialog
+            mode="decrypt"
+            onConfirm={handlePasswordConfirm}
+            onCancel={handlePasswordCancel}
+            filename={activeDoc?.metadata.filename}
+          />
+        </Suspense>
       )}
 
       {/* Statistics Dialog */}
-      <StatisticsDialog
-        isOpen={dialogs.statisticsDialog}
-        onClose={() => closeDialog('statisticsDialog')}
-        statistics={calculateStatistics(activeDoc?.content || '')}
-      />
+      {dialogs.statisticsDialog && (
+        <Suspense fallback={<div />}>
+          <StatisticsDialog
+            isOpen={dialogs.statisticsDialog}
+            onClose={() => closeDialog('statisticsDialog')}
+            statistics={calculateStatistics(activeDoc?.content || '')}
+          />
+        </Suspense>
+      )}
 
       {/* Special Character Dialog */}
-      <SpecialCharDialog
-        isOpen={dialogs.specialCharDialog}
-        onClose={() => closeDialog('specialCharDialog')}
-        onCharacterSelect={handleSpecialCharClick}
-      />
+      {dialogs.specialCharDialog && (
+        <Suspense fallback={<div />}>
+          <SpecialCharDialog
+            isOpen={dialogs.specialCharDialog}
+            onClose={() => closeDialog('specialCharDialog')}
+            onCharacterSelect={handleSpecialCharClick}
+          />
+        </Suspense>
+      )}
 
       {/* Search is now handled natively by CodeMirror (Ctrl+F) */}
 
@@ -608,11 +620,17 @@ Start typing to edit this document...`,
       </main>
 
       {specialCharsVisible && (
-        <SpecialCharsBar onCharacterClick={handleSpecialCharClick} />
+        <Suspense fallback={<div />}>
+          <SpecialCharsBar onCharacterClick={handleSpecialCharClick} />
+        </Suspense>
       )}
 
       {/* Search All Tabs Panel */}
-      {searchAllTabsVisible && <SearchAllTabsPanel />}
+      {searchAllTabsVisible && (
+        <Suspense fallback={<div />}>
+          <SearchAllTabsPanel />
+        </Suspense>
+      )}
 
       {statusBar && (
         <footer className="status-bar">
