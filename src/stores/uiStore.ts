@@ -18,6 +18,15 @@ interface MenuState {
   toolsMenu: boolean;
 }
 
+export interface SearchResult {
+  documentId: string;
+  documentName: string;
+  lineNumber: number;
+  lineText: string;
+  matchIndex: number;
+  matchLength: number;
+}
+
 interface UIState {
   // Dialog visibility
   dialogs: DialogState;
@@ -28,6 +37,13 @@ interface UIState {
   // Search state
   searchVisible: boolean;
   searchQuery: string;
+
+  // Search All Tabs state
+  searchAllTabsVisible: boolean;
+  searchAllTabsQuery: string;
+  searchAllTabsResults: SearchResult[];
+  searchAllTabsCaseSensitive: boolean;
+  searchAllTabsWholeWord: boolean;
 
   // Loading states
   loading: boolean;
@@ -51,6 +67,12 @@ interface UIState {
   showSearch: () => void;
   hideSearch: () => void;
   setSearchQuery: (query: string) => void;
+
+  showSearchAllTabs: () => void;
+  hideSearchAllTabs: () => void;
+  setSearchAllTabsQuery: (query: string) => void;
+  setSearchAllTabsResults: (results: SearchResult[]) => void;
+  setSearchAllTabsOptions: (caseSensitive: boolean, wholeWord: boolean) => void;
 
   setLoading: (loading: boolean, message?: string) => void;
 
@@ -81,6 +103,11 @@ export const useUIStore = create<UIState>((set) => ({
   menus: initialMenus,
   searchVisible: false,
   searchQuery: '',
+  searchAllTabsVisible: false,
+  searchAllTabsQuery: '',
+  searchAllTabsResults: [],
+  searchAllTabsCaseSensitive: false,
+  searchAllTabsWholeWord: false,
   loading: false,
   loadingMessage: '',
   notification: {
@@ -114,6 +141,23 @@ export const useUIStore = create<UIState>((set) => ({
   hideSearch: () => set({ searchVisible: false, searchQuery: '' }),
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+  showSearchAllTabs: () => set({ searchAllTabsVisible: true }),
+
+  hideSearchAllTabs: () => set({
+    searchAllTabsVisible: false,
+    searchAllTabsQuery: '',
+    searchAllTabsResults: [],
+  }),
+
+  setSearchAllTabsQuery: (query) => set({ searchAllTabsQuery: query }),
+
+  setSearchAllTabsResults: (results) => set({ searchAllTabsResults: results }),
+
+  setSearchAllTabsOptions: (caseSensitive, wholeWord) => set({
+    searchAllTabsCaseSensitive: caseSensitive,
+    searchAllTabsWholeWord: wholeWord,
+  }),
 
   setLoading: (loading, message = '') => set({
     loading,

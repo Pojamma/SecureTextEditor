@@ -13,6 +13,7 @@ import { StatisticsDialog } from './components/StatisticsDialog';
 import { SpecialCharDialog } from './components/SpecialCharDialog';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SpecialCharsBar } from './components/SpecialCharsBar';
+import { SearchAllTabsPanel } from './components/SearchAllTabsPanel';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
@@ -32,7 +33,7 @@ const App: React.FC = () => {
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
-  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog } = useUIStore();
+  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible } = useUIStore();
 
   const activeDoc = getActiveDocument();
 
@@ -249,6 +250,15 @@ const App: React.FC = () => {
         if (documents.length >= 9) setActiveDocument(documents[8].id);
       },
       description: 'Go to Tab 9',
+    },
+    {
+      key: 'f',
+      ctrl: true,
+      shift: true,
+      action: () => {
+        showSearchAllTabs();
+      },
+      description: 'Search All Tabs',
     },
   ]);
 
@@ -542,6 +552,9 @@ Start typing to edit this document...`,
       {specialCharsVisible && (
         <SpecialCharsBar onCharacterClick={handleSpecialCharClick} />
       )}
+
+      {/* Search All Tabs Panel */}
+      {searchAllTabsVisible && <SearchAllTabsPanel />}
 
       {statusBar && (
         <footer className="status-bar">

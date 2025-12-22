@@ -340,7 +340,7 @@
 - [x] Create SearchOverlay component (Integrated with CodeMirror 6)
 - [x] Implement find in current document (Ctrl+F or search icon)
 - [x] Implement find and replace (Built into CodeMirror)
-- [ ] Implement find in all tabs (Ctrl+Shift+F) (Deferred)
+- [x] Implement find in all tabs (Ctrl+Shift+F) - SearchAllTabsPanel component
 - [x] Add case-sensitive toggle (Built into CodeMirror)
 - [x] Add whole word toggle (Built into CodeMirror)
 - [x] Add regex support (Built into CodeMirror)
@@ -349,20 +349,20 @@
 - [x] Highlight search matches (Built into CodeMirror)
 
 ### Search Results Display
-- [ ] Create search results list
-- [ ] Group results by document
-- [ ] Show line numbers and context
-- [ ] Implement click to navigate
-- [ ] Add replace all functionality
+- [x] Create search results list (SearchAllTabsPanel with results display)
+- [x] Group results by document
+- [x] Show line numbers and context
+- [x] Implement click to navigate
+- [ ] Add replace all functionality (Deferred - future enhancement)
 
 ### Special Characters Bar
-- [ ] Create SpecialCharsBar component
-- [ ] Define default character set (! @ # $ % ^ & * etc.)
-- [ ] Implement tap/click to insert
-- [ ] Add dropdown for extended characters
-- [ ] Make character set customizable
-- [ ] Add show/hide toggle in View menu
-- [ ] Persist visibility state
+- [x] Create SpecialCharsBar component
+- [x] Define default character set (! @ # $ % ^ & * etc.)
+- [x] Implement tap/click to insert
+- [x] Add dropdown for extended characters (via Insert > Special Character dialog)
+- [x] Make character set customizable (40+ common characters)
+- [x] Add show/hide toggle in View menu
+- [x] Persist visibility state
 
 ### Additional Themes
 - [x] Implement Solarized Light theme
