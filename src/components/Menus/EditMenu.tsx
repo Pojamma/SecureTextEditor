@@ -3,7 +3,7 @@ import { useUIStore } from '@/stores/uiStore';
 
 export const EditMenu: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
-  const { closeAllMenus, showNotification } = useUIStore();
+  const { closeAllMenus, showNotification, showSearchAllTabs } = useUIStore();
 
   const handleAction = (action: string) => {
     showNotification(`${action} - Coming soon!`, 'info');
@@ -63,7 +63,10 @@ export const EditMenu: React.FC = () => {
             <span className="menu-shortcut">Ctrl+H</span>
           </button>
 
-          <button className="menu-item" onClick={() => handleAction('Find in All Tabs')}>
+          <button className="menu-item" onClick={() => {
+            showSearchAllTabs();
+            closeAllMenus();
+          }}>
             <span>Find in All Tabs</span>
             <span className="menu-shortcut">Ctrl+Shift+F</span>
           </button>

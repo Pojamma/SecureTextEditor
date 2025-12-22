@@ -117,7 +117,7 @@ export const SearchAllTabsPanel: React.FC = () => {
       acc[result.documentId] = [];
     }
     acc[result.documentId].push(result);
-    return {};
+    return acc;
   }, {} as Record<string, SearchResult[]>);
 
   return (
