@@ -329,7 +329,7 @@
 - [ ] Verify token refresh
 - [ ] Test on multiple Google accounts
 
-**Phase 4 Deliverable**: ✅ Cloud storage integration complete
+**Phase 4 Deliverable**: ✅ Cloud storage integration complete (Basic features implemented)
 
 ---
 
@@ -396,15 +396,15 @@
 - [ ] Test shortcut navigation
 
 ### Tools Menu
-- [ ] Word count
-- [ ] Character count
-- [ ] Statistics dialog
-- [ ] Sort lines
-- [ ] Remove duplicates
-- [ ] Convert case (UPPER, lower, Title)
-- [ ] Trim whitespace
-- [ ] Remove empty lines
-- [ ] Normalize line endings
+- [x] Word count (in Statistics dialog)
+- [x] Character count (in Statistics dialog)
+- [x] Statistics dialog (Ctrl+I)
+- [x] Sort lines
+- [x] Remove duplicates
+- [x] Convert case (UPPER, lower, Title)
+- [x] Trim whitespace
+- [x] Remove empty lines
+- [ ] Normalize line endings (Deferred)
 
 ### Insert Menu
 - [ ] Insert date/time
@@ -428,7 +428,7 @@
 - [ ] Test all tools menu functions
 - [ ] Test export features
 
-**Phase 5 Deliverable**: ✅ Full-featured application
+**Phase 5 Deliverable**: ⏳ Full-featured application (In Progress - ~80% complete)
 
 ---
 

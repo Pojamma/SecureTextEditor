@@ -9,10 +9,12 @@ import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { PasswordDialog } from './components/Dialogs/PasswordDialog';
+import { StatisticsDialog } from './components/StatisticsDialog';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SpecialCharsBar } from './components/SpecialCharsBar';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
+import { calculateStatistics } from './utils/textUtils';
 import './App.css';
 
 const App: React.FC = () => {
@@ -28,7 +30,7 @@ const App: React.FC = () => {
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
-  const { toggleMenu, showNotification } = useUIStore();
+  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog } = useUIStore();
 
   const activeDoc = getActiveDocument();
 
@@ -101,6 +103,14 @@ const App: React.FC = () => {
         setFontSize(14);
       },
       description: 'Reset Zoom',
+    },
+    {
+      key: 'i',
+      ctrl: true,
+      action: () => {
+        openDialog('statisticsDialog');
+      },
+      description: 'Show Statistics',
     },
     // Tab navigation
     {
@@ -412,6 +422,13 @@ Start typing to edit this document...`,
           filename={activeDoc?.metadata.filename}
         />
       )}
+
+      {/* Statistics Dialog */}
+      <StatisticsDialog
+        isOpen={dialogs.statisticsDialog}
+        onClose={() => closeDialog('statisticsDialog')}
+        statistics={calculateStatistics(activeDoc?.content || '')}
+      />
 
       {/* Search is now handled natively by CodeMirror (Ctrl+F) */}
 

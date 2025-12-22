@@ -5,6 +5,7 @@ interface DialogState {
   filePickerDialog: boolean;
   settingsDialog: boolean;
   aboutDialog: boolean;
+  statisticsDialog: boolean;
 }
 
 interface MenuState {
@@ -61,6 +62,7 @@ const initialDialogs: DialogState = {
   filePickerDialog: false,
   settingsDialog: false,
   aboutDialog: false,
+  statisticsDialog: false,
 };
 
 const initialMenus: MenuState = {
