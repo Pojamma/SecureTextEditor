@@ -10,6 +10,7 @@ import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { PasswordDialog } from './components/Dialogs/PasswordDialog';
 import { StatisticsDialog } from './components/StatisticsDialog';
+import { SpecialCharDialog } from './components/SpecialCharDialog';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SpecialCharsBar } from './components/SpecialCharsBar';
 import { SessionService } from './services/session.service';
@@ -111,6 +112,13 @@ const App: React.FC = () => {
         openDialog('statisticsDialog');
       },
       description: 'Show Statistics',
+    },
+    {
+      key: 'F3',
+      action: () => {
+        openDialog('specialCharDialog');
+      },
+      description: 'Insert Special Character',
     },
     // Tab navigation
     {
@@ -428,6 +436,13 @@ Start typing to edit this document...`,
         isOpen={dialogs.statisticsDialog}
         onClose={() => closeDialog('statisticsDialog')}
         statistics={calculateStatistics(activeDoc?.content || '')}
+      />
+
+      {/* Special Character Dialog */}
+      <SpecialCharDialog
+        isOpen={dialogs.specialCharDialog}
+        onClose={() => closeDialog('specialCharDialog')}
+        onCharacterSelect={handleSpecialCharClick}
       />
 
       {/* Search is now handled natively by CodeMirror (Ctrl+F) */}

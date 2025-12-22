@@ -6,6 +6,7 @@ interface DialogState {
   settingsDialog: boolean;
   aboutDialog: boolean;
   statisticsDialog: boolean;
+  specialCharDialog: boolean;
 }
 
 interface MenuState {
@@ -63,6 +64,7 @@ const initialDialogs: DialogState = {
   settingsDialog: false,
   aboutDialog: false,
   statisticsDialog: false,
+  specialCharDialog: false,
 };
 
 const initialMenus: MenuState = {

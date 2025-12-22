@@ -5,6 +5,7 @@ import { EditMenu } from './EditMenu';
 import { ViewMenu } from './ViewMenu';
 import { SecurityMenu } from './SecurityMenu';
 import { ToolsMenu } from './ToolsMenu';
+import { InsertMenu } from './InsertMenu';
 import './Menu.css';
 
 export const HamburgerMenu: React.FC = () => {
@@ -31,8 +32,9 @@ export const HamburgerMenu: React.FC = () => {
           <FileMenu />
           <EditMenu />
           <ViewMenu />
-          <SecurityMenu />
+          <InsertMenu />
           <ToolsMenu />
+          <SecurityMenu />
         </div>
       </div>
     </>

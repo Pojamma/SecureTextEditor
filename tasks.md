@@ -407,9 +407,9 @@
 - [ ] Normalize line endings (Deferred)
 
 ### Insert Menu
-- [ ] Insert date/time
-- [ ] Insert special character
-- [ ] Insert template (optional)
+- [x] Insert date/time (5 formats: short, long, ISO, time, datetime)
+- [x] Insert special character (F3 - dialog with 8 categories, 200+ characters)
+- [ ] Insert template (Deferred - optional feature)
 
 ### Export Options
 - [ ] Export as PDF
