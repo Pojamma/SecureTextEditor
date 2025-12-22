@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDocumentStore } from './stores/documentStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUIStore } from './stores/uiStore';
@@ -9,12 +9,13 @@ import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { PasswordDialog } from './components/Dialogs/PasswordDialog';
-import { CodeMirrorEditor } from './components/CodeMirrorEditor';
+import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
 import './App.css';
 
 const App: React.FC = () => {
+  const editorRef = useRef<CodeMirrorEditorHandle>(null);
   const [cursorInfo, setCursorInfo] = useState({ line: 1, column: 1 });
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [encryptedDataForDecrypt, setEncryptedDataForDecrypt] = useState<{
@@ -421,8 +422,8 @@ Start typing to edit this document...`,
           <div className="toolbar-actions">
             <button
               className="icon-button"
-              title="Search (Ctrl+F)"
-              onClick={() => showNotification('Use Ctrl+F to search in the editor', 'info')}
+              title="Search"
+              onClick={() => editorRef.current?.openSearch()}
             >
               🔍
             </button>
@@ -456,6 +457,7 @@ Start typing to edit this document...`,
       <main className="main-content">
         <div className="editor-container">
           <CodeMirrorEditor
+            ref={editorRef}
             value={activeDoc?.content || ''}
             onChange={handleContentChange}
             onCursorChange={handleCursorChange}

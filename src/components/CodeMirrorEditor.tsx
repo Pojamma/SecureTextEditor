@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import { useRef, useImperativeHandle, forwardRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
-import { search, highlightSelectionMatches, searchKeymap } from '@codemirror/search';
+import { search, highlightSelectionMatches, searchKeymap, openSearchPanel } from '@codemirror/search';
 import { EditorView, keymap, ViewUpdate } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import './CodeMirrorEditor.css';
@@ -14,15 +14,29 @@ export interface CodeMirrorEditorProps {
   placeholder?: string;
 }
 
-export const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
+export interface CodeMirrorEditorHandle {
+  openSearch: () => void;
+}
+
+export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(({
   value,
   onChange,
   onCursorChange,
   fontSize = 14,
   theme = 'light',
   placeholder,
-}) => {
+}, ref) => {
   const editorRef = useRef<any>(null);
+  const viewRef = useRef<EditorView | null>(null);
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    openSearch: () => {
+      if (viewRef.current) {
+        openSearchPanel(viewRef.current);
+      }
+    },
+  }));
 
   // Get theme colors based on selected theme
   const getThemeColors = (themeName: string) => {
@@ -182,6 +196,11 @@ export const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     EditorView.lineWrapping,
     customTheme,
     EditorView.updateListener.of((update: ViewUpdate) => {
+      // Store the view reference for programmatic access
+      if (!viewRef.current) {
+        viewRef.current = update.view;
+      }
+
       if (update.selectionSet && onCursorChange) {
         const pos = update.state.selection.main.head;
         onCursorChange(pos);
@@ -221,4 +240,6 @@ export const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       />
     </div>
   );
-};
+});
+
+CodeMirrorEditor.displayName = 'CodeMirrorEditor';
