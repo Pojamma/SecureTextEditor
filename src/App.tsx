@@ -5,6 +5,8 @@ import { useUIStore } from './stores/uiStore';
 import { generateId, formatDate, countCharacters } from './utils/helpers';
 import { OpenDocument } from './types/document.types';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useAndroidBackButton } from './hooks/useAndroidBackButton';
+import { useSwipeGesture } from './hooks/useSwipeGesture';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
@@ -33,9 +35,65 @@ const App: React.FC = () => {
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
-  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible } = useUIStore();
+  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus } = useUIStore();
+
+  // Swipe gesture handler for tab navigation
+  const swipeRef = useSwipeGesture({
+    onSwipeLeft: () => {
+      // Swipe left = next tab
+      if (documents.length <= 1) return;
+      const currentIndex = documents.findIndex(doc => doc.id === activeDocumentId);
+      const nextIndex = (currentIndex + 1) % documents.length;
+      setActiveDocument(documents[nextIndex].id);
+      showNotification('Next tab', 'info');
+    },
+    onSwipeRight: () => {
+      // Swipe right = previous tab
+      if (documents.length <= 1) return;
+      const currentIndex = documents.findIndex(doc => doc.id === activeDocumentId);
+      const prevIndex = currentIndex - 1 < 0 ? documents.length - 1 : currentIndex - 1;
+      setActiveDocument(documents[prevIndex].id);
+      showNotification('Previous tab', 'info');
+    },
+    minSwipeDistance: 100, // Require 100px swipe to trigger
+    maxSwipeTime: 500, // Allow up to 500ms for the swipe
+  });
 
   const activeDoc = getActiveDocument();
+
+  // Android back button handler
+  useAndroidBackButton({
+    onBackPress: () => {
+      // Priority 1: Close any open dialogs
+      if (dialogs.statisticsDialog) {
+        closeDialog('statisticsDialog');
+        return true;
+      }
+      if (dialogs.specialCharDialog) {
+        closeDialog('specialCharDialog');
+        return true;
+      }
+      if (showPasswordDialog) {
+        handlePasswordCancel();
+        return true;
+      }
+
+      // Priority 2: Close search all tabs panel
+      if (searchAllTabsVisible) {
+        hideSearchAllTabs();
+        return true;
+      }
+
+      // Priority 3: Close hamburger menu
+      if (menus.hamburgerMenu) {
+        toggleMenu('hamburgerMenu');
+        return true;
+      }
+
+      // If nothing to close, allow default behavior (exit app)
+      return false;
+    },
+  });
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -535,7 +593,7 @@ Start typing to edit this document...`,
 
       <EditorTabs />
 
-      <main className="main-content">
+      <main className="main-content" ref={swipeRef}>
         <div className="editor-container">
           <CodeMirrorEditor
             ref={editorRef}

@@ -68,13 +68,22 @@
   color: var(--color-text);
   font-size: 24px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 4px;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-button:hover {
   background-color: var(--color-secondary);
+}
+
+.close-button:active {
+  background-color: var(--color-border);
 }
 
 /* Menu Content */
@@ -93,7 +102,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 14px 16px;
+  min-height: 48px;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s;
@@ -101,6 +111,10 @@
 
 .menu-section-header:hover {
   background-color: var(--color-secondary);
+}
+
+.menu-section-header:active {
+  background-color: var(--color-border);
 }
 
 .menu-section-title {
@@ -124,7 +138,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px 10px 36px;
+  padding: 12px 16px 12px 36px;
+  min-height: 44px;
   background: none;
   border: none;
   color: var(--color-text);
@@ -136,6 +151,10 @@
 
 .menu-item:hover {
   background-color: var(--color-secondary);
+}
+
+.menu-item:active {
+  background-color: var(--color-border);
 }
 
 .menu-item.active {
@@ -174,11 +193,23 @@
     width: 280px;
   }
 
+  .menu-section-header {
+    padding: 16px;
+    min-height: 52px;
+  }
+
   .menu-item {
-    padding: 12px 16px 12px 32px;
+    padding: 14px 16px 14px 32px;
+    min-height: 48px;
+    font-size: 15px;
   }
 
   .menu-shortcut {
     display: none;
+  }
+
+  .close-button {
+    min-width: 48px;
+    min-height: 48px;
   }
 }

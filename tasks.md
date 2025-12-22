@@ -452,9 +452,9 @@
 - [ ] Test on physical Android device (tablet) (Pending)
 
 ### Android Optimizations
-- [ ] Optimize touch targets for mobile
-- [ ] Implement swipe gestures
-- [ ] Test back button handling
+- [x] Optimize touch targets for mobile (min 44-48px for all interactive elements)
+- [x] Implement swipe gestures (swipe left/right to switch tabs)
+- [x] Implement Android back button handling (close dialogs/menus, then exit)
 - [ ] Optimize keyboard interactions
 - [ ] Test file picker on Android
 - [ ] Test Google Drive on Android

@@ -86,23 +86,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  min-width: 28px;
+  min-height: 28px;
   background: transparent;
   border: none;
   border-radius: 3px;
   color: var(--text-secondary);
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
-  padding: 0;
+  padding: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .tab-close:hover {
   background-color: var(--error-color);
   color: white;
+}
+
+.tab-close:active {
+  opacity: 0.8;
 }
 
 .new-tab-button {
@@ -132,7 +136,7 @@
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .tabs-bar {
-    height: 44px; /* Larger touch targets on mobile */
+    height: 48px; /* Larger touch targets on mobile (48px minimum) */
   }
 
   .tab {
@@ -145,8 +149,15 @@
     font-size: 12px;
   }
 
+  .tab-close {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 20px;
+  }
+
   .new-tab-button {
-    width: 44px;
+    width: 48px;
+    font-size: 24px;
   }
 }
 
