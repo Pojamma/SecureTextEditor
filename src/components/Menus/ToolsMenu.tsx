@@ -90,15 +90,12 @@ export const ToolsMenu: React.FC = () => {
 
   return (
     <div className="menu-section">
-      <button
-        className="menu-section-title"
-        onClick={() => setExpanded(!expanded)}
-      >
-        Tools
-        <span className={`expand-icon ${expanded ? 'expanded' : ''}`}>▼</span>
-      </button>
+      <div className="menu-section-header" onClick={() => setExpanded(!expanded)}>
+        <span className="menu-arrow">{expanded ? '▼' : '▶'}</span>
+        <span className="menu-section-title">Tools</span>
+      </div>
       {expanded && (
-        <div className="menu-section-content">
+        <div className="menu-items">
           <button className="menu-item" onClick={handleShowStatistics}>
             <span>Statistics</span>
             <span className="menu-item-shortcut">Ctrl+I</span>

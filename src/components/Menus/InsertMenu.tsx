@@ -70,15 +70,12 @@ export const InsertMenu: React.FC = () => {
 
   return (
     <div className="menu-section">
-      <button
-        className="menu-section-title"
-        onClick={() => setExpanded(!expanded)}
-      >
-        Insert
-        <span className={`expand-icon ${expanded ? 'expanded' : ''}`}>▼</span>
-      </button>
+      <div className="menu-section-header" onClick={() => setExpanded(!expanded)}>
+        <span className="menu-arrow">{expanded ? '▼' : '▶'}</span>
+        <span className="menu-section-title">Insert</span>
+      </div>
       {expanded && (
-        <div className="menu-section-content">
+        <div className="menu-items">
           <div className="menu-item menu-item-submenu">
             <button
               className="submenu-trigger"
