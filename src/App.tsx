@@ -16,6 +16,7 @@ import { SpecialCharsBar } from './components/SpecialCharsBar';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
+import { shareDocument, copyToClipboard } from './utils/exportUtils';
 import './App.css';
 
 const App: React.FC = () => {
@@ -119,6 +120,38 @@ const App: React.FC = () => {
         openDialog('specialCharDialog');
       },
       description: 'Insert Special Character',
+    },
+    {
+      key: 's',
+      ctrl: true,
+      shift: true,
+      action: async () => {
+        if (activeDoc) {
+          try {
+            await shareDocument(activeDoc.metadata.filename, activeDoc.content);
+            showNotification('Document shared', 'success');
+          } catch (error) {
+            showNotification('Failed to share document', 'error');
+          }
+        }
+      },
+      description: 'Share Document',
+    },
+    {
+      key: 'c',
+      ctrl: true,
+      shift: true,
+      action: async () => {
+        if (activeDoc) {
+          try {
+            await copyToClipboard(activeDoc.content);
+            showNotification('Content copied to clipboard', 'success');
+          } catch (error) {
+            showNotification('Failed to copy to clipboard', 'error');
+          }
+        }
+      },
+      description: 'Copy to Clipboard',
     },
     // Tab navigation
     {
