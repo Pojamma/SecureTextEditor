@@ -1,25 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDocumentStore } from './stores/documentStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUIStore } from './stores/uiStore';
-import { generateId, formatDate, getCursorPosition, countCharacters } from './utils/helpers';
+import { generateId, formatDate, countCharacters } from './utils/helpers';
 import { OpenDocument } from './types/document.types';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
+import { PasswordDialog } from './components/Dialogs/PasswordDialog';
+import { CodeMirrorEditor } from './components/CodeMirrorEditor';
 import { SessionService } from './services/session.service';
+import { readFile, decryptFile } from './services/filesystem.service';
 import './App.css';
 
 const App: React.FC = () => {
-  const editorRef = useRef<HTMLTextAreaElement>(null);
   const [cursorInfo, setCursorInfo] = useState({ line: 1, column: 1 });
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [encryptedDataForDecrypt, setEncryptedDataForDecrypt] = useState<{
+    docId: string;
+    path: string;
+  } | null>(null);
 
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar } = useSettingsStore();
-  const { toggleMenu, showSearch, showNotification } = useUIStore();
+  const { toggleMenu, showNotification } = useUIStore();
 
   const activeDoc = getActiveDocument();
 
@@ -68,15 +75,7 @@ const App: React.FC = () => {
       },
       description: 'Close Tab',
     },
-    {
-      key: 'f',
-      ctrl: true,
-      action: () => {
-        showSearch();
-        showNotification('Search coming soon!', 'info');
-      },
-      description: 'Find',
-    },
+    // Note: Ctrl+F is handled natively by CodeMirror's built-in search
     {
       key: '=',
       ctrl: true,
@@ -299,51 +298,85 @@ Start typing to edit this document...`,
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [documents, activeDocumentId, theme, fontSize, statusBar]);
 
-  // Restore cursor and scroll position when switching documents
+  // Check if active document is encrypted and needs decryption
   useEffect(() => {
-    if (editorRef.current && activeDoc) {
-      // Restore cursor position
-      const cursorPos = activeDoc.cursorPosition || 0;
-      editorRef.current.setSelectionRange(cursorPos, cursorPos);
-
-      // Restore scroll position
-      editorRef.current.scrollTop = activeDoc.scrollPosition || 0;
-
-      // Update cursor info display
-      const pos = getCursorPosition(editorRef.current);
-      setCursorInfo(pos);
-
-      // Focus the editor
-      editorRef.current.focus();
+    if (activeDoc && activeDoc.encrypted && activeDoc.content === '' && activeDoc.path) {
+      // This is an encrypted document that was restored from session with cleared content
+      // Prompt for password
+      setEncryptedDataForDecrypt({
+        docId: activeDoc.id,
+        path: activeDoc.path,
+      });
+      setShowPasswordDialog(true);
     }
-    // Only restore when switching documents (activeDocumentId changes)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocumentId]);
+  }, [activeDocumentId, activeDoc]);
 
-  // Handle content changes
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (activeDocumentId) {
-      updateContent(activeDocumentId, e.target.value);
+  // Handle password confirmation for decryption
+  const handlePasswordConfirm = async (password: string) => {
+    if (!encryptedDataForDecrypt) return;
+
+    try {
+      // Read the encrypted file from disk
+      const result = await readFile(encryptedDataForDecrypt.path);
+
+      if (!result.requiresPassword || !result.encryptedData) {
+        throw new Error('File is not encrypted or could not be read');
+      }
+
+      // Decrypt the file
+      const decryptedDoc = await decryptFile(
+        result.encryptedData,
+        password,
+        encryptedDataForDecrypt.path
+      );
+
+      // Update the document with decrypted content
+      updateDocument(encryptedDataForDecrypt.docId, {
+        content: decryptedDoc.content,
+        modified: false,
+      });
+
+      showNotification('File decrypted successfully', 'success');
+      setShowPasswordDialog(false);
+      setEncryptedDataForDecrypt(null);
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to decrypt file',
+        'error'
+      );
     }
   };
 
-  // Update cursor position
-  const handleCursorMove = () => {
-    if (editorRef.current && activeDocumentId) {
-      const pos = getCursorPosition(editorRef.current);
-      setCursorInfo(pos);
+  // Handle password dialog cancel
+  const handlePasswordCancel = () => {
+    setShowPasswordDialog(false);
+    setEncryptedDataForDecrypt(null);
+    showNotification('Decryption cancelled', 'info');
+  };
+
+  // Search is now handled natively by CodeMirror (Ctrl+F)
+  // Note: CodeMirror manages cursor and scroll position internally through its state
+
+  // Handle content changes (CodeMirror passes string directly)
+  const handleContentChange = (value: string) => {
+    if (activeDocumentId) {
+      updateContent(activeDocumentId, value);
+    }
+  };
+
+  // Handle cursor position changes (CodeMirror passes position number)
+  const handleCursorChange = (position: number) => {
+    if (activeDocumentId && activeDoc) {
+      // Calculate line and column from position
+      const textBeforeCursor = activeDoc.content.substring(0, position);
+      const lines = textBeforeCursor.split('\n');
+      const line = lines.length;
+      const column = lines[lines.length - 1].length + 1;
+
+      setCursorInfo({ line, column });
 
       // Save cursor position to document
-      const selectionStart = editorRef.current.selectionStart;
-      updateDocument(activeDocumentId, { cursorPosition: selectionStart });
-    }
-  };
-
-  // Handle scroll position changes
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    if (activeDocumentId) {
-      const scrollTop = e.currentTarget.scrollTop;
-      updateDocument(activeDocumentId, { scrollPosition: scrollTop });
+      updateDocument(activeDocumentId, { cursorPosition: position });
     }
   };
 
@@ -363,6 +396,18 @@ Start typing to edit this document...`,
       <HamburgerMenu />
       <Notification />
 
+      {/* Password dialog for decrypting encrypted files from session */}
+      {showPasswordDialog && (
+        <PasswordDialog
+          mode="decrypt"
+          onConfirm={handlePasswordConfirm}
+          onCancel={handlePasswordCancel}
+          filename={activeDoc?.metadata.filename}
+        />
+      )}
+
+      {/* Search is now handled natively by CodeMirror (Ctrl+F) */}
+
       <header className="header">
         <div className="toolbar">
           <button
@@ -377,7 +422,7 @@ Start typing to edit this document...`,
             <button
               className="icon-button"
               title="Search (Ctrl+F)"
-              onClick={() => showNotification('Search coming soon!', 'info')}
+              onClick={() => showNotification('Use Ctrl+F to search in the editor', 'info')}
             >
               🔍
             </button>
@@ -410,16 +455,13 @@ Start typing to edit this document...`,
 
       <main className="main-content">
         <div className="editor-container">
-          <textarea
-            ref={editorRef}
-            className="editor"
-            style={{ fontSize: `${fontSize}px` }}
-            placeholder="Start typing... (Try Ctrl+N for new document, or click the ☰ menu)"
+          <CodeMirrorEditor
             value={activeDoc?.content || ''}
             onChange={handleContentChange}
-            onKeyUp={handleCursorMove}
-            onClick={handleCursorMove}
-            onScroll={handleScroll}
+            onCursorChange={handleCursorChange}
+            fontSize={fontSize}
+            theme={theme as 'light' | 'dark' | 'solarizedLight' | 'solarizedDark' | 'dracula' | 'nord'}
+            placeholder="Start typing... (Try Ctrl+N for new document, or click the ☰ menu)"
           />
         </div>
       </main>

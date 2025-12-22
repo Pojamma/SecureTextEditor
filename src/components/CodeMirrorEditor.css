@@ -1,0 +1,42 @@
+.codemirror-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.codemirror-wrapper .cm-editor {
+  height: 100%;
+  outline: none;
+  direction: ltr;
+  text-align: left;
+}
+
+.codemirror-wrapper .cm-scroller {
+  overflow: auto;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.codemirror-wrapper .cm-content {
+  padding: 10px 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Ensure proper text direction */
+.codemirror-wrapper .cm-line {
+  direction: ltr;
+  unicode-bidi: normal;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .codemirror-wrapper .cm-gutters {
+    min-width: 30px;
+  }
+
+  .codemirror-wrapper .cm-content {
+    padding: 8px 4px;
+  }
+}

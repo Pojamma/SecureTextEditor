@@ -10,7 +10,7 @@ A cross-platform encrypted text editor for Android and Windows devices, featurin
 - 📑 **Multi-Tab**: Open and edit multiple documents simultaneously
 - 💾 **Auto-Save**: Configurable auto-save intervals
 - 🎨 **Themes**: Multiple built-in themes (Light, Dark, Solarized, Dracula, Nord)
-- 🔍 **Advanced Search**: Search within documents and across all open tabs
+- 🔍 **Advanced Search**: Built-in search with highlighting, regex support, and case-sensitive matching (Ctrl+F)
 - 📲 **Offline Support**: Work without internet, sync when reconnected
 
 ## Tech Stack
@@ -18,9 +18,9 @@ A cross-platform encrypted text editor for Android and Windows devices, featurin
 - **Frontend**: React 18 + TypeScript
 - **Build Tool**: Vite
 - **Cross-Platform**: Capacitor 6
-- **UI Framework**: Material-UI
+- **Editor**: CodeMirror 6 (professional code/text editor with built-in search)
 - **State Management**: Zustand
-- **Encryption**: Web Crypto API
+- **Encryption**: Web Crypto API (AES-256-GCM)
 - **Cloud Storage**: Google Drive API v3
 
 ## Getting Started
@@ -87,14 +87,16 @@ npm run format
 ```
 src/
 ├── components/       # React components
-│   ├── Editor/      # Editor components
-│   ├── Menus/       # Menu components
-│   └── Dialogs/     # Dialog components
+│   ├── CodeMirrorEditor.tsx  # CodeMirror 6 editor wrapper
+│   ├── EditorTabs.tsx        # Multi-tab management
+│   ├── Menus/                # Menu components
+│   └── Dialogs/              # Dialog components
 ├── services/        # Business logic
 │   ├── encryption.service.ts
 │   ├── storage.service.ts
+│   ├── session.service.ts
 │   └── googleDrive.service.ts
-├── stores/          # State management
+├── stores/          # State management (Zustand)
 ├── types/           # TypeScript type definitions
 └── utils/           # Utility functions
 ```

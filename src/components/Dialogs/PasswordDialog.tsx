@@ -60,8 +60,8 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
         setError('Please enter a password');
         return;
       }
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters long');
+      if (password.length < 3) {
+        setError('Password must be at least 3 characters long');
         return;
       }
       if (password !== confirmPassword) {
@@ -82,8 +82,8 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
         setError('Please enter a new password');
         return;
       }
-      if (newPassword.length < 8) {
-        setError('New password must be at least 8 characters long');
+      if (newPassword.length < 3) {
+        setError('New password must be at least 3 characters long');
         return;
       }
       if (newPassword !== confirmNewPassword) {
@@ -192,7 +192,7 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password (min 8 characters)"
+                      placeholder="Enter password (min 3 characters)"
                       autoFocus
                       autoComplete="new-password"
                     />
@@ -254,7 +254,7 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password (min 8 characters)"
+                      placeholder="Enter new password (min 3 characters)"
                       autoComplete="new-password"
                     />
                     <button

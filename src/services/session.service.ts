@@ -21,13 +21,27 @@ const SESSION_VERSION = '1.0.0';
 export class SessionService {
   /**
    * Save current session to localStorage
+   * IMPORTANT: Clears decrypted content from encrypted documents for security
    */
   static saveSession(sessionData: Omit<SessionData, 'version' | 'timestamp'>): void {
     try {
+      // Security: Clear decrypted content from encrypted documents before saving
+      const secureDocs = sessionData.documents.map((doc) => {
+        if (doc.encrypted) {
+          // Don't save decrypted content for encrypted files
+          return {
+            ...doc,
+            content: '', // Clear content - will require password to restore
+          };
+        }
+        return doc;
+      });
+
       const dataToSave: SessionData = {
         version: SESSION_VERSION,
         timestamp: new Date().toISOString(),
         ...sessionData,
+        documents: secureDocs,
       };
 
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToSave));

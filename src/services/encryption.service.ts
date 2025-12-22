@@ -176,8 +176,8 @@ export async function encryptDocument(
   document: PlainDocument,
   password: string
 ): Promise<EncryptedDocument> {
-  if (!password || password.length < 8) {
-    throw new Error('Password must be at least 8 characters long');
+  if (!password || password.length < 3) {
+    throw new Error('Password must be at least 3 characters long');
   }
 
   // Serialize document content
@@ -264,11 +264,11 @@ export function validatePassword(password: string): {
     return { valid: false, strength: 'weak', message: 'Password is required' };
   }
 
-  if (password.length < 8) {
+  if (password.length < 3) {
     return {
       valid: false,
       strength: 'weak',
-      message: 'Password must be at least 8 characters long',
+      message: 'Password must be at least 3 characters long',
     };
   }
 

@@ -26,9 +26,10 @@ Frontend Framework: React 18+
 Language: TypeScript
 Build Tool: Vite
 Cross-Platform: Capacitor 6+
-UI Components: Material-UI or Tailwind CSS (mobile-optimized)
-State Management: Zustand or Redux Toolkit
-Encryption: Web Crypto API
+Editor Component: CodeMirror 6 (professional text editor with built-in search)
+UI Styling: Custom CSS (mobile-optimized)
+State Management: Zustand
+Encryption: Web Crypto API (AES-256-GCM)
 Cloud Storage: Google Drive API v3
 Local Storage: Capacitor Filesystem API
 ```
@@ -37,21 +38,14 @@ Local Storage: Capacitor Filesystem API
 ```
 src/
 ├── components/
-│   ├── Editor/
-│   │   ├── EditorTabs.tsx
-│   │   ├── EditorContent.tsx
-│   │   ├── Toolbar.tsx
-│   │   ├── SpecialCharsBar.tsx
-│   │   └── SearchOverlay.tsx
+│   ├── CodeMirrorEditor.tsx      # CodeMirror 6 editor wrapper with theming
+│   ├── EditorTabs.tsx            # Multi-tab document management
+│   ├── Notification.tsx          # Toast notifications
 │   ├── Menus/
-│   │   ├── FileMenu.tsx
-│   │   ├── EditMenu.tsx
-│   │   ├── ViewMenu.tsx
-│   │   └── SettingsMenu.tsx
+│   │   └── HamburgerMenu.tsx     # Main application menu
 │   └── Dialogs/
-│       ├── PasswordDialog.tsx
-│       ├── FilePickerDialog.tsx
-│       └── ThemeSelector.tsx
+│       ├── PasswordDialog.tsx    # Encryption/decryption password input
+│       └── FilePickerDialog.tsx  # File selection dialog
 ├── services/
 │   ├── encryption.service.ts
 │   ├── storage.service.ts
@@ -1207,8 +1201,9 @@ This specification provides a comprehensive blueprint for building a secure, cro
 Frontend:    React 18 + TypeScript
 Build:       Vite
 Platform:    Capacitor 6
-UI:          Material-UI / Tailwind CSS
-State:       Zustand / Redux Toolkit
+Editor:      CodeMirror 6 (with built-in search)
+UI:          Custom CSS (mobile-optimized)
+State:       Zustand
 Encryption:  Web Crypto API (AES-256-GCM)
 Storage:     Local + Google Drive
 ```
