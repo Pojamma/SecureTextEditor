@@ -1,4 +1,9 @@
 .codemirror-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -14,8 +19,35 @@
 }
 
 .codemirror-wrapper .cm-scroller {
-  overflow: auto;
+  overflow: auto !important;
   font-family: 'Courier New', Courier, monospace;
+  max-height: 100vh !important;
+  height: auto !important;
+}
+
+/* Scrollbar styling for webkit browsers (Chrome, Edge, Safari) */
+.codemirror-wrapper .cm-scroller::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.codemirror-wrapper .cm-scroller::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.codemirror-wrapper .cm-scroller::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 7px;
+}
+
+.codemirror-wrapper .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Scrollbar styling for Firefox */
+.codemirror-wrapper .cm-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
 }
 
 .codemirror-wrapper .cm-content {

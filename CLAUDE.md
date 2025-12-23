@@ -9,9 +9,11 @@ You are building **SecureTextEditor**, a cross-platform encrypted text editor fo
 ## 🗂️ Essential Documentation Files
 
 ### 1. Design Specification
+
 **File**: `SecureTextEditor_Specification.md`
 
 This is your comprehensive blueprint containing:
+
 - Complete technical architecture
 - Security specifications (AES-256-GCM encryption)
 - Feature requirements and workflows
@@ -22,12 +24,14 @@ This is your comprehensive blueprint containing:
 - Configuration files
 - Everything you need to build the application
 
-**Action**: Read this file thoroughly before starting each phase.
+**Action**: Read this file thoroughly before starting each session and phase.
 
 ### 2. Task Checklist
+
 **File**: `tasks.md`
 
 This is your progress tracker containing:
+
 - Over 300 detailed tasks organized by phase
 - Empty checkboxes for completion tracking
 - Project metrics section
@@ -53,11 +57,13 @@ This is your progress tracker containing:
 ```
 
 **Update Frequency**: 
+
 - Update after completing each significant task
 - At minimum, update at the end of each work session
 - Update project metrics when switching phases
 
 **How to Update**:
+
 1. Open `tasks.md`
 2. Find the completed task
 3. Change `- [ ]` to `- [x]`
@@ -70,11 +76,13 @@ This is your progress tracker containing:
 **IMPORTANT**: Commit and push to GitHub regularly to prevent data loss and track progress.
 
 **GitHub Credentials**: 
+
 - Your GitHub credentials are stored in the `.env` file
 - Load them at the start of your session
 - Never commit the `.env` file to the repository (add to `.gitignore`)
 
 **Commit Frequency**:
+
 - After completing each major task or feature
 - At the end of each work session
 - Before switching between phases
@@ -82,6 +90,7 @@ This is your progress tracker containing:
 - Minimum: Daily commits
 
 **Commit Message Format**:
+
 ```
 <type>(<scope>): <subject>
 
@@ -102,6 +111,7 @@ chore(tasks): update completed tasks in tasks.md
 ```
 
 **Git Workflow**:
+
 ```bash
 # 1. Check status
 git status
@@ -122,6 +132,7 @@ git push origin main
 ```
 
 **Branch Strategy** (Recommended):
+
 ```bash
 # Main development on develop branch
 git checkout -b develop
@@ -142,16 +153,19 @@ git push origin main  # after merging develop into main
 ## 🚀 Getting Started
 
 ### Step 1: Environment Setup
+
 1. Load GitHub credentials from `.env` file
 2. Verify you can commit and push to the repository
 3. Create initial `.gitignore` file (include `.env`, `node_modules`, `dist`, etc.)
 
 ### Step 2: Review Documentation
+
 1. **Read** `SecureTextEditor_Specification.md` completely
 2. **Review** `tasks.md` to understand the full scope
 3. **Understand** the 7-phase implementation plan
 
 ### Step 3: Initialize Project
+
 1. Follow "Pre-Development Setup" tasks in `tasks.md`
 2. Create the project structure
 3. Install dependencies
@@ -160,6 +174,7 @@ git push origin main  # after merging develop into main
 6. **Update** tasks.md with completed setup tasks
 
 ### Step 4: Begin Phase 1 (MVP)
+
 1. Reference Phase 1 section in the specification
 2. Work through Phase 1 tasks in `tasks.md`
 3. Commit frequently
@@ -220,7 +235,9 @@ SecureTextEditor/
 5. **Secure Random**: Use `crypto.getRandomValues()` for IV and salt generation
 
 ### Security Testing Checklist
+
 Before marking Phase 3 complete, verify:
+
 - [ ] Encryption produces different output each time (unique IV)
 - [ ] Decryption with wrong password fails gracefully
 - [ ] No passwords stored in memory after dialog closes
@@ -235,33 +252,39 @@ Before marking Phase 3 complete, verify:
 ### For Each Phase:
 
 1. **Review Specification**
+   
    - Read the relevant phase section in `SecureTextEditor_Specification.md`
    - Understand all requirements for that phase
    - Note any dependencies or prerequisites
 
 2. **Plan Work**
+   
    - Review tasks in `tasks.md` for the current phase
    - Identify critical path items
    - Plan order of implementation
 
 3. **Implement**
+   
    - Work through tasks systematically
    - Test each feature as you build it
    - Write clean, documented code
    - Follow TypeScript best practices
 
 4. **Test**
+   
    - Complete all testing tasks for the phase
    - Fix bugs before moving forward
    - Verify on both Android and Windows (starting Phase 6)
 
 5. **Update & Commit**
+   
    - Update `tasks.md` with completed tasks
    - Update project metrics
    - Commit all changes to GitHub
    - Write clear commit messages
 
 6. **Phase Review**
+   
    - Verify phase deliverable is complete
    - Ensure all tests pass
    - Document any issues or technical debt
@@ -274,18 +297,21 @@ Before marking Phase 3 complete, verify:
 ### Daily Workflow
 
 **Start of Day**:
+
 1. Pull latest from GitHub: `git pull origin main`
 2. Review `tasks.md` to see where you left off
 3. Review current phase in specification
 4. Plan tasks for the day
 
 **During Work**:
+
 1. Work on tasks in order of priority
 2. Commit after each significant accomplishment
 3. Update `tasks.md` as you complete items
 4. Test your code regularly
 
 **End of Day**:
+
 1. Update `tasks.md` with all completed tasks
 2. Update project metrics
 3. Commit and push all changes to GitHub
@@ -294,6 +320,7 @@ Before marking Phase 3 complete, verify:
 ### Weekly Milestones
 
 At the end of each week:
+
 1. Review overall progress in `tasks.md`
 2. Update time tracking metrics
 3. Assess if you're on track for phase completion
@@ -308,21 +335,25 @@ At the end of each week:
 ### When You Encounter Issues
 
 1. **Document the Issue**
+   
    - Add to "Known Issues" section in `tasks.md`
    - Include steps to reproduce
    - Note any error messages
 
 2. **Research Solutions**
+   
    - Check the specification for guidance
    - Review TypeScript/React documentation
    - Search for similar issues
 
 3. **Test Fixes**
+   
    - Verify fix resolves the issue
    - Ensure no regression
    - Add test case if needed
 
 4. **Update Documentation**
+   
    - Remove from "Known Issues" when fixed
    - Update tasks.md
    - Commit fix with clear message
@@ -332,6 +363,7 @@ At the end of each week:
 ## 📱 Platform-Specific Notes
 
 ### Android Development
+
 - Test on both emulator and physical device
 - Test on different screen sizes (phone and tablet)
 - Verify touch interactions work smoothly
@@ -339,6 +371,7 @@ At the end of each week:
 - Check battery usage and performance
 
 ### Windows Development
+
 - Test on Windows 10 and 11
 - Verify all keyboard shortcuts work
 - Test file system permissions
@@ -380,18 +413,23 @@ Before considering any phase "complete":
 ## 📞 Key Reference Points
 
 ### Encryption Implementation
+
 See: `SecureTextEditor_Specification.md` Section 3 (Security Specifications)
 
 ### UI Layout
+
 See: `SecureTextEditor_Specification.md` Section 5 (User Interface Design)
 
-### Google Drive Integration  
+### Google Drive Integration
+
 See: `SecureTextEditor_Specification.md` Section 6 (Google Drive Integration)
 
 ### Testing Requirements
+
 See: `SecureTextEditor_Specification.md` Section 8 (Testing Requirements)
 
 ### All Tasks
+
 See: `tasks.md` (all phases)
 
 ---
@@ -399,6 +437,7 @@ See: `tasks.md` (all phases)
 ## 🎓 Best Practices
 
 ### Code Quality
+
 - Use TypeScript strict mode
 - Write self-documenting code
 - Add comments for complex logic
@@ -407,6 +446,7 @@ See: `tasks.md` (all phases)
 - Use proper error handling
 
 ### Git Hygiene
+
 - Write clear commit messages
 - Commit logical units of work
 - Don't commit commented-out code
@@ -414,6 +454,7 @@ See: `tasks.md` (all phases)
 - Push regularly to prevent data loss
 
 ### Development Process
+
 - Read before coding
 - Plan before implementing
 - Test before committing
@@ -448,6 +489,13 @@ Your implementation is successful when:
 3. **💾 COMMIT** to GitHub regularly
 
 Following these three actions will ensure smooth development and prevent lost work.
+
+Append a brief **Session Summary** at the end of each session to the sessions.md file.
+
+- **IMPORTANT**: Use date/time format (YYYY-MM-DD HH:MM:SS TZ) instead of session numbers
+- **Do NOT read** sessions.md before appending - it's large and unnecessary
+- Always **append** directly to the end of the file
+- Example: `## Session: 2025-11-24 20:05:04 PST`
 
 ---
 
@@ -485,12 +533,15 @@ npx cap open android
 Use this section for your own notes as you develop:
 
 ### Technical Decisions
+
 [Document important technical choices you make]
 
 ### Challenges Encountered
+
 [Note any difficult problems and how you solved them]
 
 ### Future Improvements
+
 [Ideas for features beyond the specification]
 
 ---

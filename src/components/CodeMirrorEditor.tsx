@@ -29,6 +29,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
 }, ref) => {
   const editorRef = useRef<any>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -49,6 +50,51 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
       }
     },
   }));
+
+  // Handle Page Up/Down at the React level to prevent CodeMirror from handling it
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('Key pressed:', e.key); // DEBUG: Check if handler is called
+
+    if (!viewRef.current) {
+      console.log('No viewRef yet'); // DEBUG
+      return;
+    }
+
+    const scroller = viewRef.current.scrollDOM;
+
+    if (e.key === 'PageDown') {
+      console.log('PageDown intercepted!'); // DEBUG
+      e.preventDefault();
+      e.stopPropagation();
+
+      const viewportHeight = scroller.clientHeight;
+      const currentScroll = scroller.scrollTop;
+      const scrollHeight = scroller.scrollHeight;
+      const maxScroll = scrollHeight - viewportHeight;
+      const scrollAmount = viewportHeight * 0.9;
+      const newScroll = Math.min(currentScroll + scrollAmount, maxScroll);
+
+      console.log(`DEBUG: clientHeight=${viewportHeight}, scrollHeight=${scrollHeight}, scrollTop=${currentScroll}`); // DEBUG
+      console.log(`Scrolling from ${currentScroll} to ${newScroll}`); // DEBUG
+      scroller.scrollTop = newScroll;
+      return;
+    }
+
+    if (e.key === 'PageUp') {
+      console.log('PageUp intercepted!'); // DEBUG
+      e.preventDefault();
+      e.stopPropagation();
+
+      const viewportHeight = scroller.clientHeight;
+      const currentScroll = scroller.scrollTop;
+      const scrollAmount = viewportHeight * 0.9;
+      const newScroll = Math.max(currentScroll - scrollAmount, 0);
+
+      console.log(`Scrolling from ${currentScroll} to ${newScroll}`); // DEBUG
+      scroller.scrollTop = newScroll;
+      return;
+    }
+  };
 
   // Get theme colors based on selected theme
   const getThemeColors = (themeName: string) => {
@@ -149,8 +195,13 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
       '&': {
         fontSize: `${fontSize}px`,
         height: '100%',
+        maxHeight: '100%',
         backgroundColor: colors.bg,
         color: colors.text,
+      },
+      '&.cm-editor': {
+        height: '100%',
+        maxHeight: '100%',
       },
       '.cm-content': {
         fontFamily: 'monospace',
@@ -201,7 +252,10 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     }),
     highlightSelectionMatches(),
     keymap.of([
-      ...defaultKeymap,
+      ...defaultKeymap.filter(binding => {
+        // Remove default Page Up/Down handlers from defaultKeymap
+        return binding.key !== 'PageDown' && binding.key !== 'PageUp';
+      }),
       ...searchKeymap,
       ...historyKeymap,
     ]),
@@ -221,7 +275,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
   ];
 
   return (
-    <div className="codemirror-wrapper">
+    <div className="codemirror-wrapper" ref={wrapperRef} onKeyDown={handleKeyDown}>
       <CodeMirror
         ref={editorRef}
         value={value}
@@ -229,6 +283,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
         extensions={extensions}
         theme={colors.isDark ? 'dark' : 'light'}
         placeholder={placeholder}
+        style={{ height: '100%' }}
         basicSetup={{
           lineNumbers: true,
           highlightActiveLineGutter: true,
