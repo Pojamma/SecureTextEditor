@@ -1000,3 +1000,90 @@ Thank you for another productive session! SecureTextEditor is now a high-perform
 *Overall Progress: ~90% complete*
 *Status: On track for production release*
 
+
+## Session: 2025-12-22 21:00:00 PST
+
+### Objective
+Fix critical scrolling issues in the CodeMirror text editor on Windows PC.
+
+### Issues Reported
+1. **Page Down**: Worked for 2 presses, then jumped to end of document
+2. **Page Up**: Worked for 2 presses, then jumped to beginning of document  
+3. **No scrollbar**: Despite 1,150 lines of content, no scrollbar visible
+4. **Mouse wheel button**: Not working for scrolling
+
+### Root Cause Discovery
+Through extensive debugging with user's help:
+- CodeMirror's `.cm-scroller` element was expanding to fit ALL content
+- `clientHeight` was equal to `scrollHeight` (both ~33,000px for 1,150 lines)
+- No overflow meant no scrollbar appeared
+- Default CodeMirror Page Up/Down behavior moved cursor, causing jumps
+
+### Solution Implemented
+
+#### 1. Page Up/Down Keyboard Handling
+**File**: `src/components/CodeMirrorEditor.tsx`
+- Added React-level `onKeyDown` handler on wrapper div
+- Intercepts Page Up/Down before CodeMirror sees them
+- Manually scrolls viewport by 90% of height (leaves 10% overlap)
+- Uses `preventDefault()` and `stopPropagation()` to block default behavior
+- Added debug console logging to diagnose scroll heights
+
+#### 2. Scrollbar Visibility
+**File**: `src/components/CodeMirrorEditor.css`
+- **Critical fix**: Added `max-height: 100vh !important` to `.cm-scroller`
+- This prevents scroller from expanding beyond viewport height
+- Creates overflow condition needed for scrollbar
+- Styled scrollbar: 14px width, gray theme, works on Chrome/Edge/Firefox
+
+#### 3. Layout Structure
+**Files**: `src/App.css`, `src/components/CodeMirrorEditor.css`
+- Made `.editor-container` `position: relative`
+- Made `.codemirror-wrapper` `position: absolute` with full bounds
+- Ensures proper height cascade from app container to scroller
+
+### Technical Challenges
+- **Multiple failed approaches**: Tried custom CodeMirror keybindings, EditorView extensions, flex layouts - none worked
+- **CodeMirror auto-expansion**: Library defaults to expanding to fit content
+- **Height prop confusion**: CodeMirror's `height="100%"` prop didn't constrain as expected
+- **CSS specificity**: Needed `!important` to override inline styles
+
+### Debugging Process
+User provided invaluable console output showing:
+```
+DEBUG: clientHeight=33740, scrollHeight=33740, scrollTop=0
+```
+This revealed both heights were identical, confirming expansion issue.
+
+### Key Learnings (for future minimap feature)
+1. **CodeMirror's scroller auto-expands** - must explicitly constrain with `max-height`
+2. **Use `!important` CSS** when CodeMirror sets inline styles
+3. **Viewport units (`100vh`)** work better than percentages for constraining
+4. **React-level event interception** works well for customizing keyboard behavior
+5. **Absolute positioning** creates hard layout constraints that flex can't provide
+
+### Files Modified
+- `src/components/CodeMirrorEditor.tsx` - Keyboard handler, debug logging
+- `src/components/CodeMirrorEditor.css` - Scrollbar styling, max-height constraint
+- `src/App.css` - Layout positioning
+
+### Testing Results
+✅ Page Down scrolls smoothly page-by-page  
+✅ Page Up scrolls smoothly page-by-page  
+✅ Scrollbar visible and draggable  
+✅ Mouse wheel scrolling works  
+✅ Keyboard handler confirmed working via console logs  
+
+### Commit
+`2aef1c3` - "fix(editor): implement proper Page Up/Down scrolling and add scrollbar"
+
+### Status
+**RESOLVED** - All scrolling functionality working correctly on Windows PC.
+
+### Notes for Future Development
+- When implementing **minimap feature**, remember the `max-height` constraint lesson
+- Debug logging can remain in code temporarily for user testing
+- Consider removing debug `console.log()` statements in production build
+- Scrollbar styling could be theme-aware in future (currently fixed gray)
+
+---
