@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.pojamma.securetexteditor',
   appName: 'SecureTextEditor',
   webDir: 'dist',
-  bundledWebRuntime: false,
   plugins: {
     Filesystem: {
       androidDisplayName: 'SecureTextEditor Storage'
