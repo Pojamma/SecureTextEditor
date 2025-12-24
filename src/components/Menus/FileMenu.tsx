@@ -89,12 +89,13 @@ export const FileMenu: React.FC = () => {
           path: filename,
         });
         setShowPasswordDialog(true);
+        // Don't close menus yet - wait for password dialog to complete
       } else {
         // Open plain file
         addDocument(result.document);
         showNotification(`Opened "${filename}"`, 'success');
+        closeAllMenus();
       }
-      closeAllMenus();
     } catch (error) {
       showNotification(
         error instanceof Error ? error.message : 'Failed to open file',
@@ -196,6 +197,7 @@ export const FileMenu: React.FC = () => {
           path: fileId, // Use fileId as path for Drive files
         });
         setShowPasswordDialog(true);
+        // Don't close menus yet - wait for password dialog to complete
       } else if (parsedData && 'content' in parsedData && 'metadata' in parsedData) {
         // Plain document saved as JSON
         const plainDoc = parsedData as PlainDocument;
@@ -212,6 +214,7 @@ export const FileMenu: React.FC = () => {
         };
         addDocument(document);
         showNotification(`Opened "${filename}" from Google Drive`, 'success');
+        closeAllMenus();
       } else {
         // Plain text file
         const document: OpenDocument = {
@@ -231,8 +234,8 @@ export const FileMenu: React.FC = () => {
         };
         addDocument(document);
         showNotification(`Opened "${filename}" from Google Drive`, 'success');
+        closeAllMenus();
       }
-      closeAllMenus();
     } catch (error) {
       showNotification(
         error instanceof Error ? error.message : 'Failed to open file from Google Drive',
