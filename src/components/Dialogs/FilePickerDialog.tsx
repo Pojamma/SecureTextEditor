@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listFiles } from '@/services/filesystem.service';
+import { listFiles, readFile } from '@/services/filesystem.service';
 import './FilePickerDialog.css';
 
 export interface FilePickerDialogProps {
@@ -7,11 +7,16 @@ export interface FilePickerDialogProps {
   onCancel: () => void;
 }
 
+interface FileInfo {
+  name: string;
+  encrypted: boolean;
+}
+
 export const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
   onSelect,
   onCancel,
 }) => {
-  const [files, setFiles] = useState<string[]>([]);
+  const [files, setFiles] = useState<FileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -25,7 +30,26 @@ export const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
       setLoading(true);
       setError('');
       const fileList = await listFiles();
-      setFiles(fileList);
+
+      // Check each file to see if it's encrypted
+      const fileInfoPromises = fileList.map(async (filename) => {
+        try {
+          const result = await readFile(filename);
+          return {
+            name: filename,
+            encrypted: result.requiresPassword || false,
+          };
+        } catch (err) {
+          // If we can't read the file, assume it's not encrypted
+          return {
+            name: filename,
+            encrypted: false,
+          };
+        }
+      });
+
+      const fileInfos = await Promise.all(fileInfoPromises);
+      setFiles(fileInfos);
     } catch (err) {
       setError('Failed to load files');
       console.error('Error loading files:', err);
@@ -46,11 +70,6 @@ export const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
     if (selectedFile) {
       onSelect(selectedFile);
     }
-  };
-
-  const isEncryptedFile = (filename: string) => {
-    // Assume .enc or .encrypted extension for encrypted files
-    return filename.endsWith('.enc') || filename.endsWith('.encrypted');
   };
 
   return (
@@ -86,18 +105,18 @@ export const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
 
           {!loading && !error && files.length > 0 && (
             <div className="file-list">
-              {files.map((filename) => (
+              {files.map((file) => (
                 <div
-                  key={filename}
-                  className={`file-item ${selectedFile === filename ? 'selected' : ''}`}
-                  onClick={() => handleFileClick(filename)}
-                  onDoubleClick={() => handleFileDoubleClick(filename)}
+                  key={file.name}
+                  className={`file-item ${selectedFile === file.name ? 'selected' : ''}`}
+                  onClick={() => handleFileClick(file.name)}
+                  onDoubleClick={() => handleFileDoubleClick(file.name)}
                 >
                   <span className="file-icon">
-                    {isEncryptedFile(filename) ? '🔒' : '📄'}
+                    {file.encrypted ? '🔒' : '📄'}
                   </span>
-                  <span className="file-name">{filename}</span>
-                  {isEncryptedFile(filename) && (
+                  <span className="file-name">{file.name}</span>
+                  {file.encrypted && (
                     <span className="file-badge">Encrypted</span>
                   )}
                 </div>
