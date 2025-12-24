@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
 import { useAutoSave } from './hooks/useAutoSave';
+import { useKeyboard } from './hooks/useKeyboard';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
@@ -24,6 +25,7 @@ const StatisticsDialog = lazy(() => import('./components/StatisticsDialog').then
 const SpecialCharDialog = lazy(() => import('./components/SpecialCharDialog').then(m => ({ default: m.SpecialCharDialog })));
 const SpecialCharsBar = lazy(() => import('./components/SpecialCharsBar').then(m => ({ default: m.SpecialCharsBar })));
 const SearchAllTabsPanel = lazy(() => import('./components/SearchAllTabsPanel').then(m => ({ default: m.SearchAllTabsPanel })));
+const KeyboardAccessoryBar = lazy(() => import('./components/KeyboardAccessoryBar').then(m => ({ default: m.KeyboardAccessoryBar })));
 
 const App: React.FC = () => {
   const editorRef = useRef<CodeMirrorEditorHandle>(null);
@@ -51,6 +53,9 @@ const App: React.FC = () => {
       }
     },
   });
+
+  // Keyboard hook for mobile optimization
+  const keyboard = useKeyboard();
 
   // Swipe gesture handler for tab navigation
   const swipeRef = useSwipeGesture({
@@ -666,6 +671,18 @@ Start typing to edit this document...`,
             )}
           </span>
         </footer>
+      )}
+
+      {/* Keyboard Accessory Bar for mobile */}
+      {keyboard.isNativePlatform && (
+        <Suspense fallback={<div />}>
+          <KeyboardAccessoryBar
+            onUndo={() => editorRef.current?.undo()}
+            onRedo={() => editorRef.current?.redo()}
+            onInsertTab={() => editorRef.current?.insertText('\t')}
+            onSearchToggle={() => editorRef.current?.openSearch()}
+          />
+        </Suspense>
       )}
     </div>
   );

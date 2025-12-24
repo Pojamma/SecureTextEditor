@@ -458,7 +458,7 @@
 - [x] Optimize touch targets for mobile (min 44-48px for all interactive elements)
 - [x] Implement swipe gestures (swipe left/right to switch tabs)
 - [x] Implement Android back button handling (close dialogs/menus, then exit)
-- [ ] Optimize keyboard interactions
+- [x] Optimize keyboard interactions (Keyboard plugin, accessory bar, undo/redo, native resize)
 - [ ] Test file picker on Android
 - [ ] Test Google Drive on Android
 - [ ] Optimize battery usage

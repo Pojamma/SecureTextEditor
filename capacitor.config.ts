@@ -19,6 +19,11 @@ const config: CapacitorConfig = {
       spinnerColor: '#3b82f6',
       splashFullScreen: true,
       splashImmersive: true
+    },
+    Keyboard: {
+      resize: 'native',  // Resize the app when keyboard appears (native behavior)
+      style: 'dark',     // Keyboard style (dark matches our themes)
+      resizeOnFullScreen: true  // Resize even in fullscreen
     }
   }
 };

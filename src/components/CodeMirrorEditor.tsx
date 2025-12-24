@@ -2,7 +2,7 @@ import { useRef, useImperativeHandle, forwardRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { search, highlightSelectionMatches, searchKeymap, openSearchPanel } from '@codemirror/search';
 import { EditorView, keymap, ViewUpdate } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
 import './CodeMirrorEditor.css';
 
 export interface CodeMirrorEditorProps {
@@ -17,6 +17,8 @@ export interface CodeMirrorEditorProps {
 export interface CodeMirrorEditorHandle {
   openSearch: () => void;
   insertText: (text: string) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(({
@@ -47,6 +49,16 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
           selection: { anchor: selection.from + text.length },
         });
         view.focus();
+      }
+    },
+    undo: () => {
+      if (viewRef.current) {
+        undo(viewRef.current);
+      }
+    },
+    redo: () => {
+      if (viewRef.current) {
+        redo(viewRef.current);
       }
     },
   }));
