@@ -83,8 +83,12 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
     console.log(`[Auto-save] Timer set for ${autoSaveInterval} minutes for "${activeDoc.metadata.filename}"`);
 
     timerRef.current = setTimeout(async () => {
-      console.log(`[Auto-save] Timer expired, saving "${activeDoc.metadata.filename}"`);
-      await performAutoSave(activeDoc);
+      // Get CURRENT document state (not stale closure)
+      const currentDoc = getActiveDocument();
+      if (currentDoc) {
+        console.log(`[Auto-save] Timer expired, saving "${currentDoc.metadata.filename}"`);
+        await performAutoSave(currentDoc);
+      }
     }, intervalMs);
 
     // Cleanup function
