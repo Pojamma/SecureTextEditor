@@ -31,7 +31,7 @@ export const FileMenu: React.FC = () => {
     filename: string;
   } | null>(null);
 
-  const { addDocument, closeDocument, closeAllDocuments, documents, hasUnsavedChanges, getActiveDocument, updateDocument, activeDocumentId } =
+  const { addDocument, closeDocument, closeAllDocuments, documents, hasUnsavedChanges, getActiveDocument, updateDocument, setActiveDocument, activeDocumentId } =
     useDocumentStore();
   const { closeAllMenus, showNotification } = useUIStore();
 
@@ -70,6 +70,16 @@ export const FileMenu: React.FC = () => {
   const handleFileSelect = async (filename: string) => {
     setShowFilePicker(false);
     try {
+      // Check if file is already open
+      const existingDoc = documents.find(doc => doc.path === filename);
+      if (existingDoc) {
+        // Switch to existing tab instead of creating duplicate
+        setActiveDocument(existingDoc.id);
+        showNotification(`Switched to "${filename}"`, 'info');
+        closeAllMenus();
+        return;
+      }
+
       const result = await readFile(filename);
 
       if (result.requiresPassword && result.encryptedData) {
@@ -157,6 +167,16 @@ export const FileMenu: React.FC = () => {
   const handleDriveFileSelect = async (fileId: string, filename: string) => {
     setShowDrivePicker(false);
     try {
+      // Check if file is already open (Drive files use fileId as path)
+      const existingDoc = documents.find(doc => doc.path === fileId);
+      if (existingDoc) {
+        // Switch to existing tab instead of creating duplicate
+        setActiveDocument(existingDoc.id);
+        showNotification(`Switched to "${filename}"`, 'info');
+        closeAllMenus();
+        return;
+      }
+
       const content = await downloadFile(fileId);
 
       // Try to parse as JSON (could be encrypted or plain)
