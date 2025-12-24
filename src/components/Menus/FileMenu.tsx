@@ -33,7 +33,7 @@ export const FileMenu: React.FC = () => {
 
   const { addDocument, closeDocument, closeAllDocuments, documents, hasUnsavedChanges, getActiveDocument, updateDocument, setActiveDocument, activeDocumentId } =
     useDocumentStore();
-  const { closeAllMenus, showNotification } = useUIStore();
+  const { closeAllMenus, showNotification, showConfirmDialog } = useUIStore();
 
   const activeDoc = getActiveDocument();
 
@@ -376,9 +376,45 @@ export const FileMenu: React.FC = () => {
     }
   };
 
-  const handleSaveAll = () => {
-    showNotification('Save All functionality coming soon!', 'info');
-    closeAllMenus();
+  const handleSaveAll = async () => {
+    const modifiedDocs = documents.filter(doc => doc.modified);
+
+    if (modifiedDocs.length === 0) {
+      showNotification('No modified documents to save', 'info');
+      closeAllMenus();
+      return;
+    }
+
+    try {
+      let savedCount = 0;
+      let failedCount = 0;
+
+      for (const doc of modifiedDocs) {
+        try {
+          // Skip documents without a path or encrypted documents (require manual save)
+          if (!doc.path || doc.encrypted) {
+            continue;
+          }
+
+          await saveFile(doc);
+          updateDocument(doc.id, { modified: false });
+          savedCount++;
+        } catch (error) {
+          console.error(`Failed to save ${doc.metadata.filename}:`, error);
+          failedCount++;
+        }
+      }
+
+      if (savedCount > 0) {
+        showNotification(`Saved ${savedCount} document(s)`, 'success');
+      }
+      if (failedCount > 0) {
+        showNotification(`Failed to save ${failedCount} document(s)`, 'warning');
+      }
+      closeAllMenus();
+    } catch (error) {
+      showNotification('Failed to save all documents', 'error');
+    }
   };
 
   const handleCloseTab = () => {
@@ -391,15 +427,36 @@ export const FileMenu: React.FC = () => {
 
   const handleCloseAll = () => {
     if (hasUnsavedChanges()) {
-      if (confirm('You have unsaved changes. Close all tabs anyway?')) {
-        closeAllDocuments();
-        showNotification('All tabs closed', 'info');
-      }
+      const modifiedDocs = documents.filter(doc => doc.modified);
+      showConfirmDialog({
+        title: 'Close All Tabs?',
+        message: `You have ${modifiedDocs.length} unsaved document(s). Do you want to save before closing all?`,
+        confirmText: 'Save All',
+        cancelText: 'Cancel',
+        showThirdOption: true,
+        thirdOptionText: "Close Without Saving",
+        onConfirm: async () => {
+          // Save all then close
+          await handleSaveAll();
+          closeAllDocuments();
+          showNotification('All tabs closed', 'info');
+          closeAllMenus();
+        },
+        onCancel: () => {
+          // Do nothing
+        },
+        onThirdOption: () => {
+          // Close without saving
+          closeAllDocuments();
+          showNotification('All tabs closed without saving', 'info');
+          closeAllMenus();
+        },
+      });
     } else {
       closeAllDocuments();
       showNotification('All tabs closed', 'info');
+      closeAllMenus();
     }
-    closeAllMenus();
   };
 
   return (

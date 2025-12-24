@@ -21,6 +21,7 @@ import './App.css';
 
 // Lazy load components that aren't immediately needed
 const PasswordDialog = lazy(() => import('./components/Dialogs/PasswordDialog').then(m => ({ default: m.PasswordDialog })));
+const ConfirmDialog = lazy(() => import('./components/Dialogs/ConfirmDialog').then(m => ({ default: m.ConfirmDialog })));
 const StatisticsDialog = lazy(() => import('./components/StatisticsDialog').then(m => ({ default: m.StatisticsDialog })));
 const SpecialCharDialog = lazy(() => import('./components/SpecialCharDialog').then(m => ({ default: m.SpecialCharDialog })));
 const SpecialCharsBar = lazy(() => import('./components/SpecialCharsBar').then(m => ({ default: m.SpecialCharsBar })));
@@ -37,10 +38,10 @@ const App: React.FC = () => {
   } | null>(null);
 
   // Store hooks
-  const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession } =
+  const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
-  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus } = useUIStore();
+  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog } = useUIStore();
 
   // Auto-save hook
   const { status: autoSaveStatus } = useAutoSave({
@@ -150,10 +151,49 @@ const App: React.FC = () => {
       description: 'Save',
     },
     {
+      key: 's',
+      ctrl: true,
+      alt: true,
+      action: () => {
+        const modifiedDocs = getModifiedDocuments();
+        if (modifiedDocs.length === 0) {
+          showNotification('No modified documents to save', 'info');
+        } else {
+          showNotification(`Save All: ${modifiedDocs.length} document(s) (use File menu)`, 'info');
+        }
+      },
+      description: 'Save All',
+    },
+    {
       key: 'w',
       ctrl: true,
       action: () => {
-        if (activeDocumentId) {
+        if (!activeDocumentId || !activeDoc) return;
+
+        // Check if document has unsaved changes
+        if (activeDoc.modified) {
+          showConfirmDialog({
+            title: 'Unsaved Changes',
+            message: `"${activeDoc.metadata.filename}" has unsaved changes. Do you want to save before closing?`,
+            confirmText: 'Save',
+            cancelText: 'Cancel',
+            showThirdOption: true,
+            thirdOptionText: "Don't Save",
+            onConfirm: () => {
+              // TODO: Implement save functionality
+              showNotification('Save functionality coming soon!', 'info');
+              closeDocument(activeDocumentId);
+            },
+            onCancel: () => {
+              // Do nothing, just close the dialog
+            },
+            onThirdOption: () => {
+              // Close without saving
+              closeDocument(activeDocumentId);
+              showNotification('Tab closed without saving', 'info');
+            },
+          });
+        } else {
           closeDocument(activeDocumentId);
           showNotification('Tab closed', 'info');
         }
@@ -550,6 +590,33 @@ Start typing to edit this document...`,
             onConfirm={handlePasswordConfirm}
             onCancel={handlePasswordCancel}
             filename={activeDoc?.metadata.filename}
+          />
+        </Suspense>
+      )}
+
+      {/* Confirm dialog for various confirmations */}
+      {dialogs.confirmDialog && confirmDialogConfig && (
+        <Suspense fallback={<div />}>
+          <ConfirmDialog
+            isOpen={dialogs.confirmDialog}
+            title={confirmDialogConfig.title}
+            message={confirmDialogConfig.message}
+            confirmText={confirmDialogConfig.confirmText}
+            cancelText={confirmDialogConfig.cancelText}
+            showThirdOption={confirmDialogConfig.showThirdOption}
+            thirdOptionText={confirmDialogConfig.thirdOptionText}
+            onConfirm={() => {
+              confirmDialogConfig.onConfirm();
+              hideConfirmDialog();
+            }}
+            onCancel={() => {
+              confirmDialogConfig.onCancel?.();
+              hideConfirmDialog();
+            }}
+            onThirdOption={() => {
+              confirmDialogConfig.onThirdOption?.();
+              hideConfirmDialog();
+            }}
           />
         </Suspense>
       )}

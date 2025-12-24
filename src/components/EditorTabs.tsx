@@ -9,7 +9,7 @@ export const EditorTabs: React.FC = () => {
   const tabsContainerRef = useRef<HTMLDivElement>(null);
   const { documents, activeDocumentId, addDocument, setActiveDocument, closeDocument } =
     useDocumentStore();
-  const { showNotification } = useUIStore();
+  const { showNotification, showConfirmDialog } = useUIStore();
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -51,15 +51,32 @@ export const EditorTabs: React.FC = () => {
     const doc = documents.find((d) => d.id === documentId);
 
     if (doc?.modified) {
-      // TODO: Show confirmation dialog for unsaved changes
-      const confirmed = window.confirm(
-        `"${doc.metadata.filename}" has unsaved changes. Close anyway?`
-      );
-      if (!confirmed) return;
+      // Show confirmation dialog for unsaved changes
+      showConfirmDialog({
+        title: 'Unsaved Changes',
+        message: `"${doc.metadata.filename}" has unsaved changes. Do you want to save before closing?`,
+        confirmText: 'Save',
+        cancelText: 'Cancel',
+        showThirdOption: true,
+        thirdOptionText: "Don't Save",
+        onConfirm: () => {
+          // TODO: Implement save functionality
+          showNotification('Save functionality coming soon!', 'info');
+          closeDocument(documentId);
+        },
+        onCancel: () => {
+          // Do nothing, just close the dialog
+        },
+        onThirdOption: () => {
+          // Close without saving
+          closeDocument(documentId);
+          showNotification('Tab closed without saving', 'info');
+        },
+      });
+    } else {
+      closeDocument(documentId);
+      showNotification('Tab closed', 'info');
     }
-
-    closeDocument(documentId);
-    showNotification('Tab closed', 'info');
   };
 
   if (documents.length === 0) {

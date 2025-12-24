@@ -20,6 +20,7 @@ interface DocumentState {
   getActiveDocument: () => OpenDocument | null;
   getDocument: (id: string) => OpenDocument | null;
   hasUnsavedChanges: () => boolean;
+  getModifiedDocuments: () => OpenDocument[];
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => ({
@@ -91,5 +92,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   hasUnsavedChanges: () => {
     const { documents } = get();
     return documents.some(doc => doc.modified);
+  },
+
+  getModifiedDocuments: () => {
+    const { documents } = get();
+    return documents.filter(doc => doc.modified);
   },
 }));

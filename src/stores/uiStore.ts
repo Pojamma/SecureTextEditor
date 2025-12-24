@@ -7,6 +7,7 @@ interface DialogState {
   aboutDialog: boolean;
   statisticsDialog: boolean;
   specialCharDialog: boolean;
+  confirmDialog: boolean;
 }
 
 interface MenuState {
@@ -27,9 +28,24 @@ export interface SearchResult {
   matchLength: number;
 }
 
+export interface ConfirmDialogConfig {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  showThirdOption?: boolean;
+  thirdOptionText?: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+  onThirdOption?: () => void;
+}
+
 interface UIState {
   // Dialog visibility
   dialogs: DialogState;
+
+  // Confirm dialog configuration
+  confirmDialogConfig: ConfirmDialogConfig | null;
 
   // Menu visibility
   menus: MenuState;
@@ -78,6 +94,9 @@ interface UIState {
 
   showNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   hideNotification: () => void;
+
+  showConfirmDialog: (config: ConfirmDialogConfig) => void;
+  hideConfirmDialog: () => void;
 }
 
 const initialDialogs: DialogState = {
@@ -87,6 +106,7 @@ const initialDialogs: DialogState = {
   aboutDialog: false,
   statisticsDialog: false,
   specialCharDialog: false,
+  confirmDialog: false,
 };
 
 const initialMenus: MenuState = {
@@ -100,6 +120,7 @@ const initialMenus: MenuState = {
 
 export const useUIStore = create<UIState>((set) => ({
   dialogs: initialDialogs,
+  confirmDialogConfig: null,
   menus: initialMenus,
   searchVisible: false,
   searchQuery: '',
@@ -170,5 +191,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   hideNotification: () => set((state) => ({
     notification: { ...state.notification, visible: false },
+  })),
+
+  showConfirmDialog: (config) => set((state) => ({
+    dialogs: { ...state.dialogs, confirmDialog: true },
+    confirmDialogConfig: config,
+  })),
+
+  hideConfirmDialog: () => set((state) => ({
+    dialogs: { ...state.dialogs, confirmDialog: false },
+    confirmDialogConfig: null,
   })),
 }));

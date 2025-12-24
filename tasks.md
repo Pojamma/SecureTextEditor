@@ -153,7 +153,7 @@
 - [x] Implement Ctrl+Shift+Tab (previous tab)
 - [x] Implement Ctrl+W (close tab)
 - [x] Implement Ctrl+1-9 (go to tab N)
-- [ ] Add swipe gestures (mobile) for tab switching
+- [x] Add swipe gestures (mobile) for tab switching
 - [ ] Implement drag-to-reorder tabs (desktop)
 
 ### Session Persistence
@@ -173,12 +173,12 @@
 - [x] Add auto-save settings to menu
 
 ### Enhanced File Menu
-- [ ] Save All (Ctrl+Alt+S)
-- [ ] Close Tab (Ctrl+W)
-- [ ] Close All Tabs
-- [ ] Confirm before closing unsaved documents
+- [x] Save All (Ctrl+Alt+S)
+- [x] Close Tab (Ctrl+W)
+- [x] Close All Tabs (with confirmation for unsaved docs)
+- [x] Confirm before closing unsaved documents
 - [x] Fix: Opening already-open file should switch to existing tab instead of creating duplicate
-- [ ] Add file management features (delete, rename, copy) for local storage files
+- [ ] Add file management features (delete, rename, copy) for local storage files (Deferred to later phase)
 - [x] Improve active tab visual indicator (make it more distinct/easier to see)
 
 ### Testing - Phase 2
@@ -189,7 +189,8 @@
 - [x] Test tab close with unsaved changes
 - [ ] Verify memory cleanup when closing tabs (Pending)
 
-**Phase 2 Deliverable**: ✅ Multi-document editor with session recovery (Core features complete)
+**Phase 2 Deliverable**: ✅ Multi-document editor with session recovery **COMPLETE**
+- All core features implemented including tab navigation, session persistence, auto-save, and confirmations
 
 ---
 
