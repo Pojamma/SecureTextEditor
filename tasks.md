@@ -166,11 +166,11 @@
 - [x] Save UI state (theme, font, etc.)
 
 ### Auto-Save
-- [ ] Implement auto-save timer
-- [ ] Add configurable intervals (1, 2, 5, 10 min, off)
-- [ ] Show auto-save indicator
-- [ ] Handle auto-save errors
-- [ ] Add auto-save settings to menu
+- [x] Implement auto-save timer
+- [x] Add configurable intervals (1, 2, 5, 10 min, off)
+- [x] Show auto-save indicator
+- [x] Handle auto-save errors
+- [x] Add auto-save settings to menu
 
 ### Enhanced File Menu
 - [ ] Save All (Ctrl+Alt+S)
@@ -182,7 +182,7 @@
 - [x] Test multiple tabs (up to 10)
 - [x] Test tab switching (all methods)
 - [x] Test session persistence
-- [ ] Test auto-save functionality (Deferred)
+- [x] Test auto-save functionality
 - [x] Test tab close with unsaved changes
 - [ ] Verify memory cleanup when closing tabs (Pending)
 
