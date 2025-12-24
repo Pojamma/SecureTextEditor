@@ -1,8 +1,8 @@
 .tabs-bar {
   display: flex;
   align-items: stretch;
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   height: 40px;
   overflow: hidden;
 }
@@ -26,12 +26,12 @@
 }
 
 .tabs-container::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: var(--color-border);
   border-radius: 2px;
 }
 
 .tabs-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--color-text-secondary);
 }
 
 .tab {
@@ -41,9 +41,9 @@
   padding: 0 12px;
   min-width: 120px;
   max-width: 200px;
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
-  border-right: 1px solid var(--border-color);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-right: 1px solid var(--color-border);
   border-top: 3px solid transparent;
   border-bottom: 3px solid transparent;
   cursor: pointer;
@@ -54,16 +54,16 @@
 }
 
 .tab:hover {
-  background-color: var(--bg-hover);
+  background-color: var(--color-secondary);
 }
 
 .tab.active {
-  background: linear-gradient(180deg, var(--accent-color) 0%, var(--bg-primary) 100%);
-  color: var(--text-primary);
-  border-top: 3px solid var(--accent-color);
-  border-bottom: 3px solid var(--accent-color);
-  border-left: 2px solid var(--accent-color);
-  border-right: 2px solid var(--accent-color);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-background) 100%);
+  color: var(--color-text);
+  border-top: 3px solid var(--color-accent);
+  border-bottom: 3px solid var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  border-right: 2px solid var(--color-accent);
   font-weight: 600;
   box-shadow: 0 0 10px rgba(0, 152, 255, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
   position: relative;
@@ -86,7 +86,7 @@
 }
 
 .modified-indicator {
-  color: var(--accent-color);
+  color: var(--color-accent);
   font-size: 16px;
   line-height: 1;
 }
@@ -100,7 +100,7 @@
   background: transparent;
   border: none;
   border-radius: 3px;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -110,7 +110,7 @@
 }
 
 .tab-close:hover {
-  background-color: var(--error-color);
+  background-color: var(--color-error);
   color: white;
 }
 
@@ -123,10 +123,10 @@
   align-items: center;
   justify-content: center;
   width: 40px;
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
   border: none;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid var(--color-border);
   font-size: 20px;
   cursor: pointer;
   flex-shrink: 0;
@@ -134,12 +134,12 @@
 }
 
 .new-tab-button:hover {
-  background-color: var(--bg-hover);
-  color: var(--accent-color);
+  background-color: var(--color-secondary);
+  color: var(--color-accent);
 }
 
 .new-tab-button:active {
-  background-color: var(--bg-active);
+  background-color: var(--color-primary);
 }
 
 /* Mobile optimizations */
