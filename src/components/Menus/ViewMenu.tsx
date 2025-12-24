@@ -7,6 +7,7 @@ export const ViewMenu: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const [themeExpanded, setThemeExpanded] = useState(false);
   const [fontExpanded, setFontExpanded] = useState(false);
+  const [autoSaveExpanded, setAutoSaveExpanded] = useState(false);
 
   const {
     theme,
@@ -19,6 +20,10 @@ export const ViewMenu: React.FC = () => {
     specialCharsVisible,
     lineNumbers,
     statusBar,
+    autoSave,
+    setAutoSave,
+    autoSaveInterval,
+    setAutoSaveInterval,
   } = useSettingsStore();
 
   const { closeAllMenus, showNotification } = useUIStore();
@@ -142,6 +147,62 @@ export const ViewMenu: React.FC = () => {
             <span>Show Status Bar</span>
             {statusBar && <span>✓</span>}
           </button>
+
+          <div className="menu-separator" />
+
+          {/* Auto-Save Settings */}
+          <button
+            className={`menu-item ${autoSave ? 'active' : ''}`}
+            onClick={() => {
+              setAutoSave(!autoSave);
+              showNotification(
+                autoSave ? 'Auto-save disabled' : 'Auto-save enabled',
+                'info'
+              );
+              closeAllMenus();
+            }}
+          >
+            <span>Auto-Save</span>
+            {autoSave && <span>✓</span>}
+          </button>
+
+          {/* Auto-Save Interval Submenu */}
+          {autoSave && (
+            <div className="menu-submenu">
+              <button
+                className="menu-item"
+                onClick={() => setAutoSaveExpanded(!autoSaveExpanded)}
+              >
+                <span>Auto-Save Interval</span>
+                <span className="menu-arrow">{autoSaveExpanded ? '▼' : '▶'}</span>
+              </button>
+              {autoSaveExpanded && (
+                <div className="submenu-items">
+                  {[1, 2, 5, 10].map((interval) => (
+                    <button
+                      key={interval}
+                      className={`menu-item ${
+                        autoSaveInterval === interval ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setAutoSaveInterval(interval as 1 | 2 | 5 | 10);
+                        showNotification(
+                          `Auto-save interval set to ${interval} minute${interval > 1 ? 's' : ''}`,
+                          'success'
+                        );
+                        closeAllMenus();
+                      }}
+                    >
+                      <span>
+                        {interval} minute{interval > 1 ? 's' : ''}
+                      </span>
+                      {autoSaveInterval === interval && <span>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="menu-separator" />
 

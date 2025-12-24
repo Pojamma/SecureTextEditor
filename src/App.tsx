@@ -7,6 +7,7 @@ import { OpenDocument } from './types/document.types';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
+import { useAutoSave } from './hooks/useAutoSave';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
@@ -38,6 +39,18 @@ const App: React.FC = () => {
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
   const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus } = useUIStore();
+
+  // Auto-save hook
+  const { status: autoSaveStatus } = useAutoSave({
+    onSuccess: (filename) => {
+      showNotification(`Auto-saved "${filename}"`, 'success');
+    },
+    onError: (error) => {
+      if (!error.includes('Cannot auto-save encrypted')) {
+        showNotification(`Auto-save failed: ${error}`, 'error');
+      }
+    },
+  });
 
   // Swipe gesture handler for tab navigation
   const swipeRef = useSwipeGesture({
@@ -638,6 +651,19 @@ Start typing to edit this document...`,
             Line: {cursorInfo.line} | Col: {cursorInfo.column} | {charCount} chars |{' '}
             {lineCount} lines | {activeDoc?.metadata.filename || 'Untitled'}{' '}
             {activeDoc?.modified ? '●' : ''}
+          </span>
+          <span>
+            {autoSaveStatus.isSaving && '💾 Saving...'}
+            {!autoSaveStatus.isSaving && autoSaveStatus.lastSaved && (
+              <span title={`Auto-saved at ${autoSaveStatus.lastSaved.toLocaleTimeString()}`}>
+                ✓ Auto-saved
+              </span>
+            )}
+            {autoSaveStatus.error && (
+              <span style={{ color: 'var(--color-error)' }} title={autoSaveStatus.error}>
+                ⚠ Auto-save failed
+              </span>
+            )}
           </span>
         </footer>
       )}
