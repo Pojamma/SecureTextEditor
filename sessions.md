@@ -1087,3 +1087,63 @@ This revealed both heights were identical, confirming expansion issue.
 - Scrollbar styling could be theme-aware in future (currently fixed gray)
 
 ---
+
+## Session: 2025-12-24 (Auto-Save Implementation & UI Fixes)
+
+### Completed Tasks
+1. **Auto-Save Feature - FULLY IMPLEMENTED**
+   - Created useAutoSave hook with configurable intervals (1, 2, 5, 10 min)
+   - Fixed timer not triggering (dependency issue)
+   - Fixed stale closure bug (was only saving first character)
+   - Added auto-save settings to View menu
+   - Added status bar indicator (saving/saved/error states)
+   - Only auto-saves plain (non-encrypted) documents with existing paths
+
+2. **File Picker Encrypted Icons**
+   - Added 🔒 lock icon for encrypted files in Open Local File dialog
+   - Added "Encrypted" badge
+   - Properly detects encryption by reading file content
+
+3. **Active Tab Visual Indicator - MAJOR IMPROVEMENT**
+   - Fixed CSS variable naming issues (--bg-primary → --color-background, etc.)
+   - Added gradient background (accent color to background)
+   - Added thick colored borders (3px top/bottom, 2px left/right)
+   - Added glowing blue shadow effect
+   - Bold text for active tab
+   - Now clearly visible and distinct from inactive tabs
+
+4. **Duplicate Tab Prevention**
+   - Opening already-open files now switches to existing tab
+   - Works for both local and Google Drive files
+   - Shows "Switched to..." notification
+
+### New Tasks Added to tasks.md
+- [ ] Add file management features (delete, rename, copy) for local storage files
+- [ ] Save All (Ctrl+Alt+S)
+- [ ] Close Tab / Close All improvements
+- [ ] Confirm before closing unsaved documents
+
+### Files Modified
+- src/hooks/useAutoSave.ts (created)
+- src/App.tsx (integrated auto-save)
+- src/components/Menus/ViewMenu.tsx (auto-save settings UI)
+- src/components/Menus/FileMenu.tsx (duplicate tab prevention)
+- src/components/Dialogs/FilePickerDialog.tsx (encrypted file icons)
+- src/components/EditorTabs.css (active tab styling + CSS variable fixes)
+- tasks.md (marked completed tasks)
+
+### Statistics
+- **Commits**: 11 commits
+- **Build Status**: ✅ All successful
+- **Features Completed**: 4 major features
+- **Bugs Fixed**: 3 critical bugs (auto-save timer, stale closure, CSS variables)
+
+### Known Issues Resolved
+- ✅ Auto-save not triggering (fixed dependency array)
+- ✅ Only first character saved (fixed closure issue)
+- ✅ Active tab not visible (fixed CSS variable names)
+- ✅ Duplicate tabs on file open (added duplicate check)
+
+### Ready for Testing
+All features built and ready for production testing on localhost.
+
