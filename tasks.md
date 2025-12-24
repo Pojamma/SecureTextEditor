@@ -177,6 +177,9 @@
 - [ ] Close Tab (Ctrl+W)
 - [ ] Close All Tabs
 - [ ] Confirm before closing unsaved documents
+- [ ] Fix: Opening already-open file should switch to existing tab instead of creating duplicate
+- [ ] Add file management features (delete, rename, copy) for local storage files
+- [ ] Improve active tab visual indicator (make it more distinct/easier to see)
 
 ### Testing - Phase 2
 - [x] Test multiple tabs (up to 10)
