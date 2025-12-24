@@ -39,6 +39,12 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
   const lastDocIdRef = useRef<string | null>(null);
   const lastContentRef = useRef<string>('');
 
+  // Get active document for dependency tracking
+  const activeDoc = getActiveDocument();
+  const activeDocModified = activeDoc?.modified;
+  const activeDocPath = activeDoc?.path;
+  const activeDocSource = activeDoc?.source;
+
   useEffect(() => {
     // Clear any existing timer
     if (timerRef.current) {
@@ -51,14 +57,12 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
       return;
     }
 
-    const activeDoc = getActiveDocument();
-
     // Don't auto-save if:
     // - No active document
     // - Document hasn't been saved yet (no path)
     // - Document hasn't been modified
     // - Document is a temp document
-    if (!activeDoc || !activeDoc.path || !activeDoc.modified || activeDoc.source === 'temp') {
+    if (!activeDoc || !activeDocPath || !activeDocModified || activeDocSource === 'temp') {
       return;
     }
 
@@ -69,14 +73,17 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
     }
 
     // If content hasn't changed since last check, don't need to save
-    if (activeDoc.content === lastContentRef.current && !activeDoc.modified) {
+    if (activeDoc.content === lastContentRef.current && !activeDocModified) {
       return;
     }
 
     // Set up auto-save timer
     const intervalMs = autoSaveInterval * 60 * 1000; // Convert minutes to milliseconds
 
+    console.log(`[Auto-save] Timer set for ${autoSaveInterval} minutes for "${activeDoc.metadata.filename}"`);
+
     timerRef.current = setTimeout(async () => {
+      console.log(`[Auto-save] Timer expired, saving "${activeDoc.metadata.filename}"`);
       await performAutoSave(activeDoc);
     }, intervalMs);
 
@@ -87,11 +94,19 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
         timerRef.current = null;
       }
     };
-  }, [autoSave, autoSaveInterval, activeDocumentId, getActiveDocument]);
+  }, [autoSave, autoSaveInterval, activeDocumentId, activeDocModified, activeDocPath, activeDocSource]);
 
   const performAutoSave = async (document: OpenDocument) => {
+    console.log(`[Auto-save] performAutoSave called for "${document.metadata.filename}"`, {
+      hasPath: !!document.path,
+      isModified: document.modified,
+      isEncrypted: document.encrypted,
+      source: document.source
+    });
+
     // Double-check document still exists and needs saving
     if (!document || !document.path || !document.modified) {
+      console.log('[Auto-save] Skipping: document missing, no path, or not modified');
       return;
     }
 
@@ -102,6 +117,7 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
       // For encrypted documents, we can't auto-save because we don't have the password
       // Only auto-save plain documents
       if (document.encrypted) {
+        console.log('[Auto-save] Skipping: encrypted document');
         setStatus({
           isSaving: false,
           lastSaved: null,
@@ -111,6 +127,7 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
         return;
       }
 
+      console.log(`[Auto-save] Saving file: ${document.path}`);
       await saveFile(document);
 
       // Update document modified flag
@@ -126,6 +143,7 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
         error: null,
       });
 
+      console.log(`[Auto-save] Successfully saved "${document.metadata.filename}"`);
       options?.onSuccess?.(document.metadata.filename);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Auto-save failed';
@@ -136,7 +154,7 @@ export const useAutoSave = (options?: UseAutoSaveOptions) => {
       });
 
       options?.onError?.(errorMessage);
-      console.error('Auto-save failed:', error);
+      console.error('[Auto-save] Save failed:', error);
     }
   };
 
