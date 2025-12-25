@@ -6,6 +6,11 @@ A cross-platform encrypted text editor for Android and Windows devices, featurin
 
 - 🔐 **Strong Encryption**: AES-256-GCM with PBKDF2 key derivation
 - 📱 **Cross-Platform**: Android and Windows support via Capacitor
+- 📂 **External File Access**: Open and edit files from anywhere on your device (NEW!)
+  - Native file picker integration (Android SAF, Windows Explorer)
+  - Save directly back to original location
+  - Works with Documents, Downloads, SD card, and any accessible folder
+  - Session persistence across app restarts
 - ☁️ **Cloud Storage**: Google Drive integration
 - 📑 **Multi-Tab**: Open and edit multiple documents simultaneously
 - 💾 **Auto-Save**: Configurable auto-save intervals
@@ -22,6 +27,8 @@ A cross-platform encrypted text editor for Android and Windows devices, featurin
 - **State Management**: Zustand
 - **Encryption**: Web Crypto API (AES-256-GCM)
 - **Cloud Storage**: Google Drive API v3
+- **File Picker**: @capawesome/capacitor-file-picker (native integration)
+- **Custom Plugins**: FileWriter plugin for Android URI writes
 
 ## Getting Started
 
@@ -93,12 +100,20 @@ src/
 │   └── Dialogs/              # Dialog components
 ├── services/        # Business logic
 │   ├── encryption.service.ts
-│   ├── storage.service.ts
+│   ├── filesystem.service.ts
+│   ├── externalFilesystem.service.ts  # External file operations
 │   ├── session.service.ts
 │   └── googleDrive.service.ts
+├── plugins/         # Custom Capacitor plugins
+│   ├── fileWriter.ts         # Native file writer interface
+│   └── fileWriter.web.ts     # Web implementation
 ├── stores/          # State management (Zustand)
 ├── types/           # TypeScript type definitions
 └── utils/           # Utility functions
+
+android/
+└── app/src/main/java/...
+    └── FileWriterPlugin.java  # Android native plugin
 ```
 
 ## Security
@@ -120,9 +135,23 @@ src/
 
 This is a personal project. For private use only.
 
+## Recent Updates
+
+### v0.2.0 (December 2025) - External File System Access
+- ✨ Added native file picker integration for opening files from anywhere
+- ✨ Implemented direct save-back to original file locations
+- ✨ Session persistence for external files with URI validation
+- 🔧 Created custom FileWriter plugin for Android content:// URI writes
+- 📱 Full Android SAF (Storage Access Framework) support
+- 💻 Windows file:// path support
+
+### v0.1.0 (Initial Development)
+- 🎉 Initial release with core features
+- Multi-tab editing, encryption, Google Drive integration
+
 ## Version
 
-Current Version: **0.1.0** (Development)
+Current Version: **0.2.0** (Development)
 
 ---
 

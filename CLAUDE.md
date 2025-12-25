@@ -201,9 +201,13 @@ SecureTextEditor/
 │   │   └── Dialogs/
 │   ├── services/                 # Business logic
 │   │   ├── encryption.service.ts
-│   │   ├── storage.service.ts
+│   │   ├── filesystem.service.ts
+│   │   ├── externalFilesystem.service.ts  # External file operations
 │   │   ├── googleDrive.service.ts
 │   │   └── session.service.ts
+│   ├── plugins/                  # Custom Capacitor plugins
+│   │   ├── fileWriter.ts         # Native file writer plugin
+│   │   └── fileWriter.web.ts     # Web implementation
 │   ├── stores/                   # State management
 │   │   ├── documentStore.ts
 │   │   ├── settingsStore.ts
@@ -213,6 +217,9 @@ SecureTextEditor/
 │   └── App.tsx                   # Main app component
 │
 ├── android/                      # Android platform (Capacitor)
+│   └── app/src/main/java/.../
+│       ├── MainActivity.java
+│       └── FileWriterPlugin.java # Custom plugin for URI writes
 ├── windows/                      # Windows platform (Electron)
 │
 ├── capacitor.config.ts           # Capacitor configuration
@@ -434,6 +441,77 @@ See: `tasks.md` (all phases)
 
 ---
 
+## 🆕 Implemented Features
+
+### External File System Access (Phase 2.5 Enhancement)
+
+**Status**: ✅ **IMPLEMENTED** (December 2025)
+
+The app now supports opening and editing files from anywhere on your device, not just from the app's private storage.
+
+**Key Features**:
+
+1. **Native File Picker Integration**
+   - Open files from Documents, Downloads, SD card, or any accessible location
+   - Uses Storage Access Framework (SAF) on Android
+   - Standard file picker on Windows
+   - Menu: File → "Open from Device" (Ctrl+Shift+D)
+
+2. **Direct Save-Back to Original Location**
+   - Files save directly to their original location
+   - No need for "Save As" workflow
+   - Works with both plain text and encrypted files
+   - Ctrl+S saves external files just like local files
+
+3. **Session Persistence**
+   - External files persist across app restarts
+   - Automatic URI validation on session restore
+   - Graceful handling of moved/deleted files
+   - User notifications for inaccessible files
+
+4. **File Type Support**
+   - Plain text files (.txt, .md, etc.)
+   - Encrypted files (.enc)
+   - Any text-based file format
+
+**Technical Implementation**:
+
+- **Plugin**: `@capawesome/capacitor-file-picker@6.2.0` for file selection
+- **Native Plugin**: Custom `FileWriterPlugin` for Android content:// URI writes
+- **Source Type**: Added `'external'` to document sources
+- **URI Storage**: `externalUri` field stores content:// or file:// paths
+
+**Files Involved**:
+- `src/services/externalFilesystem.service.ts` - Core external file operations
+- `src/services/filesystem.service.ts` - Integration with main filesystem
+- `src/plugins/fileWriter.ts` - Native plugin interface
+- `android/.../FileWriterPlugin.java` - Native Android implementation
+- `src/components/Menus/FileMenu.tsx` - UI integration
+
+**Usage Example**:
+
+```typescript
+// Opening external file
+const result = await readExternalFile();
+addDocument(result.document);
+
+// Saving external file
+await saveExternalFile(document, password?);
+```
+
+**Testing Checklist**:
+- ✅ Open plain text file from Downloads → Edit → Save
+- ✅ Open encrypted file from Documents → Decrypt → Edit → Save
+- ✅ Verify file updated at original location
+- ✅ Close app → Reopen → External files restored
+- ✅ Move file while app closed → Notification on restore
+
+**Commit References**:
+- `85c456c` - Initial external file access implementation
+- `6ea9218` - Write-back to original location
+
+---
+
 ## 🎓 Best Practices
 
 ### Code Quality
@@ -550,6 +628,6 @@ Use this section for your own notes as you develop:
 
 ---
 
-**Last Updated**: [Date]  
-**Current Status**: Ready to Begin  
-**Next Action**: Review specification and start Phase 1
+**Last Updated**: December 24, 2025
+**Current Status**: Phase 2+ Complete - External File System Access Implemented
+**Next Action**: Continue with remaining phases or enhancements

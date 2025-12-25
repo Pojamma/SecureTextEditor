@@ -1236,7 +1236,64 @@ npx cap open android     # Open in Android Studio
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: December 20, 2025  
-**Author**: Design Specification for SecureTextEditor  
-**Status**: Ready for Implementation
+## 21. Post-Implementation Enhancements
+
+### 21.1 External File System Access (v0.2.0 - Implemented December 2025)
+
+**Overview**: Enhanced the application to support opening and editing files from anywhere on the device filesystem, not limited to the app's private storage.
+
+**Implementation Details**:
+
+**New File Source Type**:
+- Added `'external'` to document source types: `'local' | 'drive' | 'temp' | 'external'`
+- New field `externalUri?: string` in `OpenDocument` interface to store content:// (Android) or file:// (Windows) URIs
+
+**Native File Picker Integration**:
+- Plugin: `@capawesome/capacitor-file-picker@6.2.0`
+- Android: Storage Access Framework (SAF) with content:// URI support
+- Windows: Standard file picker with file:// path support
+- Menu: File → "Open from Device" (Ctrl+Shift+D)
+
+**Custom Native Plugin - FileWriter**:
+```java
+// Android: FileWriterPlugin.java
+@PluginMethod
+public void writeToUri(PluginCall call) {
+    String uri = call.getString("uri");
+    String content = call.getString("content");
+    // Uses ContentResolver.openOutputStream() for content:// URIs
+}
+```
+
+**Key Services**:
+- `externalFilesystem.service.ts` - Core external file operations (pick, validate, save)
+- `filesystem.service.ts` - Enhanced with `readExternalFile()` and `saveExternalFile()`
+- `plugins/fileWriter.ts` - TypeScript interface for native plugin
+
+**Session Persistence**:
+- External file URIs stored in session data
+- Automatic validation on app restart
+- Graceful handling of inaccessible files (moved/deleted)
+- User notifications for restoration status
+
+**Supported Operations**:
+1. Open file from anywhere → Edit → Save to original location
+2. Encrypted external files fully supported
+3. Plain text and JSON format files
+4. Session restore with URI validation
+
+**Limitations**:
+- Web platform: Not supported (browser security restrictions)
+- Large files (>10MB): Performance impact (loaded entirely in memory)
+
+**Future Enhancements**:
+- File streaming for large files
+- Recent files tracking
+- Persistent folder access permissions
+
+---
+
+**Document Version**: 1.1
+**Last Updated**: December 24, 2025
+**Author**: Design Specification for SecureTextEditor
+**Status**: Phase 2+ Complete - External File Access Implemented
