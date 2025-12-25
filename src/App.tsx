@@ -14,7 +14,7 @@ import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SessionService } from './services/session.service';
-import { readFile, decryptFile } from './services/filesystem.service';
+import { readFile, decryptFile, checkExternalFileAccess } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
 import { shareDocument, copyToClipboard } from './utils/exportUtils';
 import './App.css';
@@ -383,21 +383,52 @@ const App: React.FC = () => {
   // Restore session on app launch
   useEffect(() => {
     // Only run once on mount
-    const session = SessionService.loadSession();
+    const restoreSessionAsync = async () => {
+      const session = SessionService.loadSession();
 
-    if (session && session.documents.length > 0 && !SessionService.isSessionExpired()) {
-      // Restore documents and active document
-      restoreSession(session.documents, session.activeDocumentId);
+      if (session && session.documents.length > 0 && !SessionService.isSessionExpired()) {
+        // Validate external file URIs before restoring
+        const validatedDocs = await Promise.all(
+          session.documents.map(async (doc) => {
+            if (doc.source === 'external' && doc.externalUri) {
+              const accessible = await checkExternalFileAccess(doc.externalUri);
+              return accessible ? doc : null;
+            }
+            return doc;
+          })
+        );
 
-      // Restore UI settings
-      if (session.uiState) {
-        setTheme(session.uiState.theme);
-        setFontSize(session.uiState.fontSize);
+        const accessibleDocs = validatedDocs.filter((doc) => doc !== null) as OpenDocument[];
+        const inaccessibleCount = session.documents.length - accessibleDocs.length;
+
+        // Restore documents and active document
+        if (accessibleDocs.length > 0) {
+          restoreSession(accessibleDocs, session.activeDocumentId);
+
+          // Restore UI settings
+          if (session.uiState) {
+            setTheme(session.uiState.theme);
+            setFontSize(session.uiState.fontSize);
+          }
+
+          if (inaccessibleCount > 0) {
+            showNotification(
+              `Session restored. ${inaccessibleCount} external file(s) no longer accessible.`,
+              'warning'
+            );
+          } else {
+            showNotification('Session restored', 'success');
+          }
+          return;
+        } else if (inaccessibleCount > 0) {
+          showNotification(
+            `Could not restore session. ${inaccessibleCount} file(s) no longer accessible.`,
+            'warning'
+          );
+        }
       }
 
-      showNotification('Session restored', 'success');
-    } else {
-      // No valid session, create welcome document
+      // No valid session or no accessible documents, create welcome document
       const welcomeDoc: OpenDocument = {
         id: generateId(),
         path: '',
@@ -433,7 +464,9 @@ Start typing to edit this document...`,
         },
       };
       addDocument(welcomeDoc);
-    }
+    };
+
+    restoreSessionAsync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
 

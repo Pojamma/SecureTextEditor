@@ -23,12 +23,12 @@ import { Capacitor } from '@capacitor/core';
 
 const GOOGLE_CONFIG = {
   web: {
-    clientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
-    apiKey: 'YOUR_API_KEY',
+    clientId: '471557058540-fk6kl3p112vmq39h24fnaeonk2j9kitt.apps.googleusercontent.com',
+    apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
     redirectUri: 'http://localhost:5173/auth/callback', // Update for production
   },
   android: {
-    clientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+    clientId: '471557058540-u3c9fap63lraskt2nal067lnf1bmb8j5.apps.googleusercontent.com',
     redirectUri: 'com.pojamma.securetexteditor:/oauth2callback',
   },
   scopes: [

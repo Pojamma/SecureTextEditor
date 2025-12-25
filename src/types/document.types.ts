@@ -25,11 +25,12 @@ export type Document = PlainDocument | EncryptedDocument;
 export interface OpenDocument {
   id: string;
   path: string;
-  source: 'local' | 'drive' | 'temp';
+  source: 'local' | 'drive' | 'temp' | 'external';
   encrypted: boolean;
   content: string;
   modified: boolean;
   cursorPosition: number;
   scrollPosition: number;
   metadata: DocumentMetadata;
+  externalUri?: string; // URI for external files (content:// on Android, file:// on Windows)
 }

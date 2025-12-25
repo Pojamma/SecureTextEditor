@@ -6,7 +6,7 @@ import { OpenDocument, EncryptedDocument, PlainDocument } from '@/types/document
 import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
 import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
-import { readFile, decryptFile, saveFile, saveFileAs } from '@/services/filesystem.service';
+import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile } from '@/services/filesystem.service';
 import {
   isAuthenticated,
   signIn,
@@ -28,6 +28,11 @@ export const FileMenu: React.FC = () => {
   const [driveAuthenticated, setDriveAuthenticated] = useState(false);
   const [pendingDriveFile, setPendingDriveFile] = useState<{
     fileId: string;
+    filename: string;
+  } | null>(null);
+  const [pendingExternalFile, setPendingExternalFile] = useState<{
+    data: EncryptedDocument;
+    uri: string;
     filename: string;
   } | null>(null);
 
@@ -278,6 +283,70 @@ export const FileMenu: React.FC = () => {
     }
   };
 
+  const handleOpenExternal = async () => {
+    try {
+      const result = await readExternalFile();
+
+      // Check if file is already open by URI
+      const existingDoc = documents.find(
+        (doc) => doc.source === 'external' && doc.externalUri === result.document.externalUri
+      );
+      if (existingDoc) {
+        setActiveDocument(existingDoc.id);
+        showNotification(`Switched to "${result.document.metadata.filename}"`, 'info');
+        closeAllMenus();
+        return;
+      }
+
+      if (result.requiresPassword && result.encryptedData) {
+        // Show password dialog for encrypted file
+        setPendingExternalFile({
+          data: result.encryptedData,
+          uri: result.document.externalUri || '',
+          filename: result.document.metadata.filename,
+        });
+        setShowPasswordDialog(true);
+      } else {
+        // Open plain file
+        addDocument(result.document);
+        showNotification(`Opened "${result.document.metadata.filename}" from device`, 'success');
+        closeAllMenus();
+      }
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to open file from device',
+        'error'
+      );
+    }
+  };
+
+  const handleExternalDecryptPassword = async (password: string) => {
+    if (!pendingExternalFile) return;
+
+    try {
+      const document = await decryptExternalFile(
+        pendingExternalFile.data,
+        password,
+        pendingExternalFile.filename,
+        pendingExternalFile.uri
+      );
+      addDocument(document);
+      showNotification(
+        `Opened and decrypted "${pendingExternalFile.filename}" from device`,
+        'success'
+      );
+      closeAllMenus();
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Decryption failed',
+        'error'
+      );
+    } finally {
+      setShowPasswordDialog(false);
+      setPendingExternalFile(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!activeDoc) {
       showNotification('No active document to save', 'error');
@@ -286,6 +355,16 @@ export const FileMenu: React.FC = () => {
 
     // If document has no path, treat as Save As
     if (!activeDoc.path) {
+      handleSaveAs();
+      return;
+    }
+
+    // External files cannot be saved directly - use Save As
+    if (activeDoc.source === 'external') {
+      showNotification(
+        'External files cannot be saved to their original location. Please use "Save As" to save to app storage.',
+        'info'
+      );
       handleSaveAs();
       return;
     }
@@ -482,6 +561,11 @@ export const FileMenu: React.FC = () => {
               <span className="menu-shortcut">Ctrl+O</span>
             </button>
 
+            <button className="menu-item" onClick={handleOpenExternal}>
+              <span>Open from Device</span>
+              <span className="menu-shortcut">Ctrl+Shift+D</span>
+            </button>
+
             <button className="menu-item" onClick={handleOpenDrive}>
               <span>Open from Google Drive</span>
               <span className="menu-shortcut">Ctrl+Shift+O</span>
@@ -549,9 +633,11 @@ export const FileMenu: React.FC = () => {
       {/* Password Dialog for decryption or save */}
       {showPasswordDialog && (
         <PasswordDialog
-          mode={pendingEncryptedData ? 'decrypt' : 'encrypt'}
+          mode={pendingEncryptedData || pendingExternalFile ? 'decrypt' : 'encrypt'}
           onConfirm={
-            pendingDriveFile
+            pendingExternalFile
+              ? handleExternalDecryptPassword
+              : pendingDriveFile
               ? handleDriveDecryptPassword
               : pendingEncryptedData
               ? handleDecryptPassword
@@ -561,9 +647,11 @@ export const FileMenu: React.FC = () => {
             setShowPasswordDialog(false);
             setPendingEncryptedData(null);
             setPendingDriveFile(null);
+            setPendingExternalFile(null);
             setSaveAsMode(false);
           }}
           filename={
+            pendingExternalFile?.filename ||
             pendingDriveFile?.filename ||
             pendingEncryptedData?.data.metadata.filename ||
             activeDoc?.metadata.filename
