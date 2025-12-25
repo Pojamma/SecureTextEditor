@@ -6,7 +6,7 @@ import { OpenDocument, EncryptedDocument, PlainDocument } from '@/types/document
 import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
 import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
-import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile } from '@/services/filesystem.service';
+import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile } from '@/services/filesystem.service';
 import {
   isAuthenticated,
   signIn,
@@ -359,23 +359,19 @@ export const FileMenu: React.FC = () => {
       return;
     }
 
-    // External files cannot be saved directly - use Save As
-    if (activeDoc.source === 'external') {
-      showNotification(
-        'External files cannot be saved to their original location. Please use "Save As" to save to app storage.',
-        'info'
-      );
-      handleSaveAs();
-      return;
-    }
-
     try {
       // If encrypted, prompt for password
       if (activeDoc.encrypted) {
         setSaveAsMode(false);
         setShowPasswordDialog(true);
       } else {
-        await saveFile(activeDoc);
+        // Save based on source type
+        if (activeDoc.source === 'external') {
+          await saveExternalFile(activeDoc);
+        } else {
+          await saveFile(activeDoc);
+        }
+
         if (activeDocumentId) {
           updateDocument(activeDocumentId, { modified: false });
         }
@@ -440,7 +436,13 @@ export const FileMenu: React.FC = () => {
           await performSaveAs(newFilename, password);
         }
       } else {
-        await saveFile(activeDoc, password);
+        // Save based on source type
+        if (activeDoc.source === 'external') {
+          await saveExternalFile(activeDoc, password);
+        } else {
+          await saveFile(activeDoc, password);
+        }
+
         if (activeDocumentId) {
           updateDocument(activeDocumentId, { modified: false });
         }
@@ -478,7 +480,13 @@ export const FileMenu: React.FC = () => {
             continue;
           }
 
-          await saveFile(doc);
+          // Save based on source type
+          if (doc.source === 'external') {
+            await saveExternalFile(doc);
+          } else {
+            await saveFile(doc);
+          }
+
           updateDocument(doc.id, { modified: false });
           savedCount++;
         } catch (error) {

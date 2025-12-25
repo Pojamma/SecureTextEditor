@@ -7,6 +7,8 @@
 
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
+import FileWriter from '@/plugins/fileWriter';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
@@ -86,30 +88,38 @@ export async function checkExternalFileAccess(uri: string): Promise<boolean> {
 
 /**
  * Save content to external URI
- * Note: On Android with content:// URIs, this will show a "Save As" picker
- * due to SAF limitations without native plugin extension
+ * Writes content back to the original file location
  */
-export async function saveToExternalUri(): Promise<string> {
-  // For now, just throw an error to trigger the "Save As" flow in the caller
-  // because writing to content:// URIs requires additional native code
-  throw new Error('SAVE_AS_REQUIRED');
+export async function saveToExternalUri(uri: string, content: string): Promise<void> {
+  const platform = Capacitor.getPlatform();
+
+  if (platform === 'android' && uri.startsWith('content://')) {
+    // Use native plugin for Android content:// URIs
+    try {
+      await FileWriter.writeToUri({ uri, content });
+    } catch (error) {
+      throw new Error(
+        `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  } else if (platform === 'web') {
+    // Web platform doesn't support writing to arbitrary URIs
+    throw new Error('Writing to external files is not supported on web platform');
+  } else {
+    // For other platforms (Windows/Electron), use standard file system API
+    // The uri should be a file:// path
+    try {
+      const filePath = uri.replace('file://', '');
+      await Filesystem.writeFile({
+        path: filePath,
+        data: content,
+        encoding: 'utf8' as any,
+      });
+    } catch (error) {
+      throw new Error(
+        `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
 }
 
-/**
- * Pick a save location and write content
- * This is used for the "Save As" flow on all platforms
- */
-export async function pickSaveLocationAndWrite(): Promise<{
-  uri: string;
-  filename: string;
-}> {
-  // Note: The @capawesome/capacitor-file-picker plugin doesn't have a built-in
-  // "save file" picker. For now, we'll return an error indicating this needs
-  // to be handled differently (e.g., via the existing "Save As" flow that copies
-  // to app storage, or wait for a future enhancement with a save-specific plugin)
-
-  throw new Error(
-    'External file saving requires selecting save location. ' +
-    'Use "Save As" to save to app storage, or this feature will be enhanced in a future update.'
-  );
-}

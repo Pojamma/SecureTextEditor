@@ -18,7 +18,7 @@ const getDirectory = () => {
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
 import { encryptDocument, decryptDocument, isEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
-import { pickExternalFile, checkExternalFileAccess as checkExternalUri } from './externalFilesystem.service';
+import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri } from './externalFilesystem.service';
 
 // Re-export for convenience
 export { checkExternalUri as checkExternalFileAccess };
@@ -465,17 +465,61 @@ export async function decryptExternalFile(
 }
 
 /**
- * Save external file
- * Note: Due to platform limitations, external files use "Save As" flow
- * Users will need to select save location each time
+ * Save external file back to its original location
+ * Writes the file content back to the external URI
  */
-export async function saveExternalFile(): Promise<void> {
-  // For external files, we recommend using "Save As" to save to app storage
-  // or waiting for future enhancement with native save plugin
-  throw new Error(
-    'External files cannot be saved directly to their original location. ' +
-    'Please use "Save As" to save to app storage.'
-  );
+export async function saveExternalFile(document: OpenDocument, password?: string): Promise<void> {
+  if (!document.externalUri) {
+    throw new Error('Document does not have an external URI');
+  }
+
+  try {
+    let content: string;
+
+    if (document.encrypted && password) {
+      // Encrypt and save
+      const plainDoc: PlainDocument = {
+        content: document.content,
+        metadata: {
+          ...document.metadata,
+          modified: formatDate(),
+        },
+      };
+
+      const encryptedDoc = await encryptDocument(plainDoc, password);
+      content = JSON.stringify(encryptedDoc, null, 2);
+    } else if (document.encrypted && !password) {
+      throw new Error('Password required to save encrypted document');
+    } else {
+      // For plain text files that were originally plain text (not in JSON format),
+      // save as plain text. Otherwise save as JSON.
+      // We can detect this by checking if the file had metadata when opened
+      const hasStructuredMetadata = document.metadata.created !== document.metadata.modified;
+
+      if (hasStructuredMetadata) {
+        // Save as JSON format
+        const plainDoc: PlainDocument = {
+          content: document.content,
+          metadata: {
+            ...document.metadata,
+            modified: formatDate(),
+          },
+        };
+        content = JSON.stringify(plainDoc, null, 2);
+      } else {
+        // Save as plain text (original format)
+        content = document.content;
+      }
+    }
+
+    // Write back to the external URI
+    await saveToExternalUri(document.externalUri, content);
+  } catch (error) {
+    console.error('Error saving external file:', error);
+    throw new Error(
+      `Failed to save file: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 /**
