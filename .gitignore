@@ -1,8 +1,11 @@
-# Environment variables (contains secrets)
+# Environment variables with secrets (never commit)
 .env
 .env.local
-.env.development
-.env.production
+.env.*.local
+
+# Allow environment templates (no secrets)
+!.env.development
+!.env.production
 
 # Dependencies
 node_modules/
