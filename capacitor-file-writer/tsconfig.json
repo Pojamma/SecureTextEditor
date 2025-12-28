@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "target": "ES2017",
+    "lib": ["ES2017"],
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist/esm",
+    "rootDir": "./src",
+    "removeComments": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "files": [
+    "src/index.ts"
+  ]
+}

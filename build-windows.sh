@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SecureTextEditor - Windows Build Script
-# Builds the Electron app for Windows
+# Builds the Electron app for Windows and deploys to C:\SecureTextEditor
 
 set -e  # Exit on error
 
@@ -12,7 +12,11 @@ echo ""
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Configuration
+WINDOWS_DEPLOY_PATH="/mnt/c/SecureTextEditor"
 
 # Step 1: Build the web app
 echo -e "${BLUE}Step 1: Building web application...${NC}"
@@ -29,21 +33,66 @@ cd electron
 echo -e "${BLUE}Step 3: Building Electron TypeScript...${NC}"
 npm run build
 
-# Step 5: Create Windows installer
-echo -e "${BLUE}Step 4: Creating Windows installer (NSIS)...${NC}"
-npm run electron:make
+# Step 5: Update app.asar in existing win-unpacked
+echo -e "${BLUE}Step 4: Updating Windows app package...${NC}"
 
-# Step 6: Back to root
-cd ..
+# Check if win-unpacked exists
+if [ ! -d "dist/win-unpacked" ]; then
+    echo -e "${RED}❌ Error: dist/win-unpacked not found!${NC}"
+    echo "Please run a full build first to create the initial Windows package."
+    echo "Or extract SecureTextEditor-Windows.tar.gz to electron/dist/"
+    exit 1
+fi
+
+# Navigate to resources directory
+cd dist/win-unpacked/resources
+
+# Backup existing app.asar
+if [ -f "app.asar" ]; then
+    echo "  → Backing up existing app.asar..."
+    mv app.asar app.asar.backup
+fi
+
+# Extract, update, and repackage
+echo "  → Extracting app.asar..."
+npx asar extract app.asar.backup app-extracted 2>/dev/null || echo "  → Creating fresh app package..."
+
+echo "  → Copying updated web app..."
+cp -r ../../../app/* app-extracted/app/
+
+echo "  → Copying updated Electron build..."
+cp -r ../../../build/* app-extracted/build/
+
+echo "  → Repacking app.asar..."
+npx asar pack app-extracted app.asar
+
+echo "  → Cleaning up temporary files..."
+rm -rf app-extracted app.asar.backup
+
+# Step 6: Deploy to Windows
+echo -e "${BLUE}Step 5: Deploying to Windows (C:\\SecureTextEditor)...${NC}"
+
+# Create deployment directory if it doesn't exist
+if [ ! -d "$WINDOWS_DEPLOY_PATH" ]; then
+    echo "  → Creating deployment directory..."
+    mkdir -p "$WINDOWS_DEPLOY_PATH"
+fi
+
+# Copy entire win-unpacked directory
+echo "  → Copying files to C:\\SecureTextEditor..."
+cp -r ../../../dist/win-unpacked/* "$WINDOWS_DEPLOY_PATH/"
+
+# Back to root
+cd ../../..
 
 echo ""
-echo -e "${GREEN}✅ Windows build complete!${NC}"
+echo -e "${GREEN}✅ Windows build complete and deployed!${NC}"
 echo ""
-echo "Build artifacts location:"
-echo "  📦 electron/dist/"
+echo "Deployment location:"
+echo -e "  📁 ${GREEN}C:\\SecureTextEditor\\${NC}"
 echo ""
-echo "Output files:"
-echo "  - SecureTextEditor Setup [version].exe (Installer)"
-echo "  - SecureTextEditor-Portable-[version].exe (Portable)"
+echo "To run the app on Windows:"
+echo -e "  ${YELLOW}C:\\SecureTextEditor\\SecureTextEditor.exe${NC}"
 echo ""
-echo -e "${YELLOW}Note: For production builds, you may want to code-sign the executables.${NC}"
+echo "Or double-click SecureTextEditor.exe from File Explorer"
+echo ""

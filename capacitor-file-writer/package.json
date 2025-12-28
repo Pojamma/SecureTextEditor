@@ -1,0 +1,45 @@
+{
+  "name": "capacitor-file-writer",
+  "version": "0.0.1",
+  "description": "Capacitor plugin for writing to external file URIs",
+  "main": "dist/plugin.cjs.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "unpkg": "dist/plugin.js",
+  "files": [
+    "android/build.gradle",
+    "android/src/",
+    "dist/",
+    "src/"
+  ],
+  "author": "SecureTextEditor",
+  "license": "MIT",
+  "capacitor": {
+    "android": {
+      "src": "android"
+    }
+  },
+  "scripts": {
+    "verify": "npm run verify:android",
+    "verify:android": "cd android && ./gradlew clean build test && cd ..",
+    "build": "npm run clean && tsc && rollup -c rollup.config.js",
+    "clean": "rimraf ./dist",
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "typescript": "^5.2.2",
+    "rimraf": "^5.0.0",
+    "rollup": "^4.0.0"
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "native"
+  ]
+}

@@ -14,7 +14,7 @@ import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
 import { SessionService } from './services/session.service';
-import { readFile, decryptFile, checkExternalFileAccess } from './services/filesystem.service';
+import { readFile, decryptFile, checkExternalFileAccess, saveFile, saveExternalFile } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
 import { shareDocument, copyToClipboard } from './utils/exportUtils';
 import './App.css';
@@ -145,8 +145,43 @@ const App: React.FC = () => {
     {
       key: 's',
       ctrl: true,
-      action: () => {
-        showNotification('Save functionality coming soon!', 'info');
+      action: async () => {
+        if (!activeDoc) {
+          showNotification('No document to save', 'info');
+          return;
+        }
+
+        try {
+          // If temp file or no path, prompt for Save As
+          if (activeDoc.source === 'temp' || !activeDoc.path) {
+            showNotification('Use File → Save As to save new documents', 'info');
+            return;
+          }
+
+          // For encrypted files, user must use File → Save menu (requires password)
+          if (activeDoc.encrypted) {
+            showNotification('Use File → Save for encrypted files (password required)', 'info');
+            return;
+          }
+
+          // Save external file
+          if (activeDoc.source === 'external') {
+            await saveExternalFile(activeDoc);
+            updateDocument(activeDoc.id, { modified: false });
+            showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
+            return;
+          }
+
+          // Save regular file
+          await saveFile(activeDoc);
+          updateDocument(activeDoc.id, { modified: false });
+          showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
+        } catch (error) {
+          showNotification(
+            error instanceof Error ? error.message : 'Failed to save file',
+            'error'
+          );
+        }
       },
       description: 'Save',
     },

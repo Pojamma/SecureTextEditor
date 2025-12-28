@@ -46,7 +46,12 @@ if (electronIsDev) {
   // Initialize our app, build windows, and load content.
   await myCapacitorApp.init();
   // Check for updates if we are in a packaged app.
-  autoUpdater.checkForUpdatesAndNotify();
+  // Disabled for now - enable when you publish releases on GitHub
+  // if (!electronIsDev) {
+  //   autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+  //     console.log('Auto-updater error (ignored):', error.message);
+  //   });
+  // }
 })();
 
 // Handle when all of our windows are close (platforms have their own expectations).
@@ -68,3 +73,50 @@ app.on('activate', async function () {
 });
 
 // Place all ipc or other electron api calls and custom functionality under this line
+
+import { ipcMain, dialog } from 'electron';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
+// File picker for opening external files with write access
+ipcMain.handle('file:pick-external', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: 'Text Files', extensions: ['txt', 'md', 'enc'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    throw new Error('File selection cancelled');
+  }
+
+  const filePath = result.filePaths[0];
+
+  try {
+    // Read file content
+    const content = await fs.readFile(filePath, 'utf-8');
+    const stats = await fs.stat(filePath);
+
+    return {
+      uri: filePath,
+      name: path.basename(filePath),
+      content: content,
+      mimeType: 'text/plain',
+      size: stats.size,
+    };
+  } catch (error) {
+    throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// Write to external file
+ipcMain.handle('file:write-external', async (_event, filePath: string, content: string) => {
+  try {
+    await fs.writeFile(filePath, content, 'utf-8');
+    return { success: true };
+  } catch (error) {
+    throw new Error(`Failed to write file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});

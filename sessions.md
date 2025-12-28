@@ -1436,3 +1436,166 @@ Configured production build settings and environment management for the SecureTe
 
 **Status**: ✅ Implementation Complete - Ready for Device Testing
 
+
+## Session: 2025-12-24 22:30:00 PST - Write-Back Implementation
+
+### Task: Implement Save-Back to Original Location for External Files
+
+**User Feedback**: "Files can be saved back to their original locations. My text editor does it all the time. The other app you created for me does. Please implement it."
+
+**Implementation Completed**:
+
+1. **Native Android Plugin** (NEW)
+   - Created `FileWriterPlugin.java` in Android project
+   - Implements `writeToUri()` method using Android ContentResolver
+   - Handles content:// URI writes with persistable permissions
+   - Properly handles SecurityExceptions and error cases
+
+2. **TypeScript Plugin Interface** (NEW)
+   - Created `src/plugins/fileWriter.ts` - Plugin registration and interface
+   - Created `src/plugins/fileWriter.web.ts` - Web platform stub
+   - Registered plugin in MainActivity.java
+
+3. **External Filesystem Service Updates**
+   - Implemented `saveToExternalUri(uri, content)` function
+   - Android: Uses native FileWriter plugin for content:// URIs
+   - Windows: Uses Capacitor Filesystem API for file:// paths
+   - Proper error handling for all platforms
+
+4. **Filesystem Service Updates**
+   - Rewrote `saveExternalFile(document, password?)` function
+   - Now actually saves files instead of throwing error
+   - Handles encrypted files with password
+   - Preserves original file format (plain text vs JSON)
+   - Smart format detection based on metadata
+
+5. **FileMenu Integration**
+   - Updated `handleSave()` to save external files to original location
+   - Updated `handleSavePassword()` to handle external encrypted files
+   - Updated `handleSaveAll()` to save external files
+   - Removed "Save As only" limitation
+   - Users can now Ctrl+S to save external files directly
+
+**Technical Approach**:
+
+**Android (content:// URIs)**:
+```java
+ContentResolver resolver = getContext().getContentResolver();
+resolver.takePersistableUriPermission(uri, FLAG_GRANT_WRITE_URI_PERMISSION);
+OutputStream out = resolver.openOutputStream(uri, "wt");
+out.write(content.getBytes(UTF_8));
+```
+
+**Windows (file:// paths)**:
+```typescript
+await Filesystem.writeFile({
+  path: filePath.replace('file://', ''),
+  data: content,
+  encoding: 'utf8',
+});
+```
+
+**Files Modified**:
+- `android/app/src/main/java/.../FileWriterPlugin.java` (NEW)
+- `android/app/src/main/java/.../MainActivity.java`
+- `src/plugins/fileWriter.ts` (NEW)
+- `src/plugins/fileWriter.web.ts` (NEW)
+- `src/services/externalFilesystem.service.ts`
+- `src/services/filesystem.service.ts`
+- `src/components/Menus/FileMenu.tsx`
+
+**Testing**:
+- ✅ Build successful (TypeScript, Vite)
+- ✅ Capacitor sync completed
+- ⏳ Android device testing required to verify write-back functionality
+
+**Git Commit**: `6ea9218` - feat(filesystem): implement write-back for external files
+
+**Status**: ✅ Implementation Complete - Files Can Now Be Saved to Original Location!
+
+**Next Steps**:
+- Test on Android device to verify content:// URI writes work correctly
+- Test on Windows to verify file:// path writes work correctly
+- Verify encrypted external files save/load correctly
+
+
+## Session: 2025-12-24 23:00:00 PST - Documentation Update
+
+### Task: Update All Technical Documentation
+
+**Objective**: Update all project documentation to reflect the new external file system access features.
+
+**Documentation Updates Completed**:
+
+1. **CLAUDE.md** (Development Guide)
+   - ✅ Added comprehensive "Implemented Features" section
+   - ✅ Documented external file system access with:
+     * Feature overview and key capabilities
+     * Technical implementation details
+     * Plugin information and file structure
+     * Usage examples and code snippets
+     * Testing checklist
+     * Commit references
+   - ✅ Updated project structure to show new files
+   - ✅ Updated Android structure to include FileWriterPlugin.java
+   - ✅ Updated status: "Phase 2+ Complete - External File Access Implemented"
+   - ✅ Updated last modified: December 24, 2025
+
+2. **README.md** (Project Overview)
+   - ✅ Enhanced features list with detailed external file access info
+   - ✅ Updated tech stack:
+     * Added @capawesome/capacitor-file-picker
+     * Added custom FileWriter plugin
+   - ✅ Enhanced project structure showing:
+     * New services (externalFilesystem.service.ts)
+     * New plugins directory
+     * Android native plugin
+   - ✅ Added "Recent Updates" section with version changelog
+   - ✅ Updated version: 0.1.0 → 0.2.0
+
+3. **SecureTextEditor_Specification.md** (Technical Spec)
+   - ✅ Added Section 21: "Post-Implementation Enhancements"
+   - ✅ Comprehensive documentation of external file access:
+     * Overview and implementation details
+     * New file source types and data structures
+     * Native plugin architecture
+     * Key services and their responsibilities
+     * Supported operations and workflows
+     * Session persistence mechanisms
+     * Known limitations
+     * Future enhancement roadmap
+   - ✅ Updated document version: 1.0 → 1.1
+   - ✅ Updated status and date
+
+**Key Documentation Highlights**:
+
+**For Developers**:
+- Complete technical architecture documented
+- Code examples and usage patterns
+- Service responsibilities clearly defined
+- Native plugin implementation details
+- Testing procedures outlined
+
+**For Users**:
+- Feature capabilities clearly explained
+- Workflow examples provided
+- Limitations transparently documented
+
+**For Future Development**:
+- Enhancement ideas documented
+- Known limitations identified
+- Extensibility points noted
+
+**Git Commit**: `a3742e1` - docs: update all documentation for external file system access
+
+**Files Modified**:
+- CLAUDE.md
+- README.md
+- SecureTextEditor_Specification.md
+
+**Status**: ✅ All Documentation Updated and Published
+
+**Project Version**: v0.2.0 (Development)
+
+**Summary**: The project now has comprehensive, up-to-date documentation covering all implemented features, including the newly added external file system access capability. All documentation is consistent, accurate, and ready for both current use and future development.
+

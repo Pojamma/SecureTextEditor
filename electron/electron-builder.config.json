@@ -12,7 +12,10 @@
     "capacitor.config.*",
     "app/**/*"
   ],
-  "publish": null,
+  "publish": {
+    "provider": "generic",
+    "url": "https://github.com/Pojamma/SecureTextEditor/releases"
+  },
   "nsis": {
     "allowElevation": true,
     "oneClick": false,
@@ -27,7 +30,8 @@
     "target": ["nsis", "portable"],
     "icon": "assets/appIcon.ico",
     "publisherName": "Pojamma",
-    "verifyUpdateCodeSignature": false
+    "verifyUpdateCodeSignature": false,
+    "sign": null
   },
   "portable": {
     "artifactName": "SecureTextEditor-Portable-${version}.exe"

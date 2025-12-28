@@ -8,7 +8,7 @@
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import FileWriter from '@/plugins/fileWriter';
+import { FileWriter } from 'capacitor-file-writer';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
@@ -23,13 +23,88 @@ export async function pickExternalFile(): Promise<{
   mimeType: string;
   size: number;
 }> {
-  // Request permissions first (Android only, auto-handled by plugin on other platforms)
-  // Note: The plugin handles permissions automatically in newer versions
+  const platform = Capacitor.getPlatform();
 
-  // Pick file using native picker
+  // Web platform doesn't support external file access
+  if (platform === 'web') {
+    throw new Error(
+      'External file access is not available in web browser. ' +
+        'Please use the native Android app or Windows desktop app.'
+    );
+  }
+
+  // On Electron (Windows/Mac/Linux), use Electron's file picker
+  if (platform === 'electron') {
+    try {
+      const result = await FileWriter.pickDocument();
+
+      // Check file size
+      const size = result.content.length;
+      if (size > MAX_FILE_SIZE) {
+        const sizeInMB = (size / 1024 / 1024).toFixed(2);
+        console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
+      }
+
+      // Validate that it's text content
+      const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
+      if (isBinary) {
+        throw new Error('This file appears to be a binary file. Please select a text file.');
+      }
+
+      console.log('[ExternalFS] Document picked on Electron:', result.uri);
+
+      return {
+        uri: result.uri,
+        filename: result.name || 'Untitled.txt',
+        content: result.content,
+        mimeType: result.mimeType || 'text/plain',
+        size: size,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to pick document: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  // On Android, use our custom document picker that requests write permissions
+  if (platform === 'android') {
+    try {
+      const result = await FileWriter.pickDocument();
+
+      // Check file size
+      const size = result.content.length;
+      if (size > MAX_FILE_SIZE) {
+        const sizeInMB = (size / 1024 / 1024).toFixed(2);
+        console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
+      }
+
+      // Validate that it's text content (basic check for binary files)
+      const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
+      if (isBinary) {
+        throw new Error('This file appears to be a binary file. Please select a text file.');
+      }
+
+      console.log('[ExternalFS] Document picked with write permissions:', result.uri);
+
+      return {
+        uri: result.uri,
+        filename: result.name || 'Untitled.txt',
+        content: result.content,
+        mimeType: result.mimeType || 'text/plain',
+        size: size,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to pick document: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  // On other platforms, use the file picker plugin
   const result = await FilePicker.pickFiles({
-    types: ['text/*', 'application/json', 'application/octet-stream'], // Include various text file types
-    readData: true, // Get base64 content
+    types: ['text/*', 'application/json', 'application/octet-stream'],
+    readData: true,
   });
 
   if (!result.files || result.files.length === 0) {
@@ -42,7 +117,6 @@ export async function pickExternalFile(): Promise<{
   const size = file.size || 0;
   if (size > MAX_FILE_SIZE) {
     const sizeInMB = (size / 1024 / 1024).toFixed(2);
-    // For now, just warn - could add user confirmation dialog in the future
     console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
   }
 
@@ -54,7 +128,7 @@ export async function pickExternalFile(): Promise<{
     throw new Error('Failed to read file content. This may be a binary file.');
   }
 
-  // Validate that it's text content (basic check for binary files)
+  // Validate that it's text content
   const isBinary = /[\x00-\x08\x0E-\x1F]/.test(content.substring(0, 1000));
   if (isBinary) {
     throw new Error('This file appears to be a binary file. Please select a text file.');
@@ -92,12 +166,30 @@ export async function checkExternalFileAccess(uri: string): Promise<boolean> {
  */
 export async function saveToExternalUri(uri: string, content: string): Promise<void> {
   const platform = Capacitor.getPlatform();
+  console.log('[ExternalFS] Platform detected:', platform);
+  console.log('[ExternalFS] URI:', uri);
+  console.log('[ExternalFS] FileWriter plugin:', FileWriter);
 
   if (platform === 'android' && uri.startsWith('content://')) {
     // Use native plugin for Android content:// URIs
+    console.log('[ExternalFS] Calling FileWriter.writeToUri for Android');
     try {
-      await FileWriter.writeToUri({ uri, content });
+      const result = await FileWriter.writeToUri({ uri, content });
+      console.log('[ExternalFS] Write successful:', result);
     } catch (error) {
+      console.error('[ExternalFS] Write failed:', error);
+      throw new Error(
+        `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  } else if (platform === 'electron') {
+    // Use FileWriter plugin for Electron (writes via IPC to main process)
+    console.log('[ExternalFS] Calling FileWriter.writeToUri for Electron');
+    try {
+      const result = await FileWriter.writeToUri({ uri, content });
+      console.log('[ExternalFS] Write successful:', result);
+    } catch (error) {
+      console.error('[ExternalFS] Write failed:', error);
       throw new Error(
         `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -106,20 +198,8 @@ export async function saveToExternalUri(uri: string, content: string): Promise<v
     // Web platform doesn't support writing to arbitrary URIs
     throw new Error('Writing to external files is not supported on web platform');
   } else {
-    // For other platforms (Windows/Electron), use standard file system API
-    // The uri should be a file:// path
-    try {
-      const filePath = uri.replace('file://', '');
-      await Filesystem.writeFile({
-        path: filePath,
-        data: content,
-        encoding: 'utf8' as any,
-      });
-    } catch (error) {
-      throw new Error(
-        `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    // Fallback for other platforms
+    throw new Error(`External file writing is not supported on platform: ${platform}`);
   }
 }
 

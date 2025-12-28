@@ -8,14 +8,14 @@ This guide will help you configure Google Drive integration for SecureTextEditor
 - Google Cloud Console access
 - Node.js and npm installed
 
-## Step 1: Create a Google Cloud Project
+## Step 1: Create a Google Cloud Project (Done)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Click "Select a project" → "New Project"
 3. Enter project name: "SecureTextEditor"
 4. Click "Create"
 
-## Step 2: Enable Google Drive API
+## Step 2: Enable Google Drive API (Done)
 
 1. In the Google Cloud Console, select your project
 2. Navigate to "APIs & Services" → "Library"
@@ -24,7 +24,8 @@ This guide will help you configure Google Drive integration for SecureTextEditor
 
 ## Step 3: Configure OAuth Consent Screen
 
-1. Navigate to "APIs & Services" → "OAuth consent screen"
+1. Navigate to "APIs & Services" → "OAuth consent screen", 
+Audience,
 2. Select "External" user type
 3. Click "Create"
 4. Fill in the required fields:
@@ -41,7 +42,7 @@ This guide will help you configure Google Drive integration for SecureTextEditor
 
 ## Step 4: Create OAuth 2.0 Credentials
 
-### For Web (Development)
+### For Web (Development) (Done)
 
 1. Navigate to "APIs & Services" → "Credentials"
 2. Click "Create Credentials" → "OAuth client ID"
