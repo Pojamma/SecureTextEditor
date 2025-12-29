@@ -7,12 +7,13 @@
 
 .dropdown-menu-container {
   position: relative;
+  z-index: 10000; /* Ensure container is also high */
 }
 
 .dropdown-menu-button {
   padding: 0.5rem 1rem;
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: none;
   color: var(--color-text);
   font-size: 0.95rem;
   font-weight: 500;
@@ -20,7 +21,6 @@
   transition: background 0.2s;
   border-radius: 4px;
   position: relative;
-  z-index: 10;
 }
 
 .dropdown-menu-button:hover {
@@ -41,7 +41,7 @@
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 0.5rem 0;
-  z-index: 1000;
+  z-index: 10000; /* Much higher to ensure it's above editor */
   margin-top: 0.25rem;
   animation: dropdownSlideIn 0.15s ease-out;
 }

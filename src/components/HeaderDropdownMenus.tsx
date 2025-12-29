@@ -34,7 +34,6 @@ export const HeaderDropdownMenus: React.FC = () => {
   }, [openMenu]);
 
   const toggleMenu = (menu: MenuType) => {
-    console.log('Toggle menu clicked:', menu, 'Current menu:', openMenu);
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
