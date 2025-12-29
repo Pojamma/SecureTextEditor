@@ -285,7 +285,15 @@ export const FileMenu: React.FC = () => {
 
   const handleOpenExternal = async () => {
     try {
+      console.log('[FileMenu] Opening external file...');
       const result = await readExternalFile();
+
+      console.log('[FileMenu] External file result:', {
+        requiresPassword: result.requiresPassword,
+        hasEncryptedData: !!result.encryptedData,
+        documentEncrypted: result.document.encrypted,
+        filename: result.document.metadata.filename,
+      });
 
       // Check if file is already open by URI
       const existingDoc = documents.find(
@@ -300,6 +308,7 @@ export const FileMenu: React.FC = () => {
 
       if (result.requiresPassword && result.encryptedData) {
         // Show password dialog for encrypted file
+        console.log('[FileMenu] Showing password dialog for encrypted file');
         setPendingExternalFile({
           data: result.encryptedData,
           uri: result.document.externalUri || '',
@@ -308,6 +317,7 @@ export const FileMenu: React.FC = () => {
         setShowPasswordDialog(true);
       } else {
         // Open plain file
+        console.log('[FileMenu] Opening as plain file');
         addDocument(result.document);
         showNotification(`Opened "${result.document.metadata.filename}" from device`, 'success');
         closeAllMenus();

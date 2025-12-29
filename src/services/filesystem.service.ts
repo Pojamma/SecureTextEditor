@@ -507,16 +507,35 @@ export async function readExternalFile(): Promise<{
   try {
     const fileData = await pickExternalFile();
 
+    console.log('[FS] External file picked:', {
+      filename: fileData.filename,
+      contentLength: fileData.content.length,
+      contentPreview: fileData.content.substring(0, 200),
+    });
+
     // Try to parse as JSON (could be encrypted or PlainDocument format)
     let parsedData;
     try {
       parsedData = JSON.parse(fileData.content);
-    } catch {
+      console.log('[FS] Parsed JSON successfully:', {
+        hasEncrypted: 'encrypted' in parsedData,
+        encryptedValue: parsedData.encrypted,
+        hasCiphertext: 'ciphertext' in parsedData,
+        hasSalt: 'salt' in parsedData,
+        hasIv: 'iv' in parsedData,
+        keys: Object.keys(parsedData),
+      });
+    } catch (error) {
+      console.log('[FS] Failed to parse as JSON:', error);
       parsedData = null;
     }
 
     // Check if file is encrypted
-    if (parsedData && isEncrypted(parsedData)) {
+    const isEncryptedFile = parsedData && isEncrypted(parsedData);
+    console.log('[FS] Is encrypted file:', isEncryptedFile);
+
+    if (isEncryptedFile) {
+      console.log('[FS] Returning encrypted file, will prompt for password');
       return {
         document: {
           id: generateId(),
