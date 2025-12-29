@@ -11,7 +11,11 @@ type MenuType = 'file' | 'edit' | 'more' | null;
 
 export const HeaderDropdownMenus: React.FC = () => {
   const [openMenu, setOpenMenu] = useState<MenuType>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
+  const fileButtonRef = useRef<HTMLButtonElement>(null);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
 
   const { addDocument, updateDocument, getActiveDocument } = useDocumentStore();
   const { editorActions, showNotification, openDialog, showSearchAllTabs } = useUIStore();
@@ -33,8 +37,20 @@ export const HeaderDropdownMenus: React.FC = () => {
     }
   }, [openMenu]);
 
-  const toggleMenu = (menu: MenuType) => {
-    setOpenMenu(openMenu === menu ? null : menu);
+  const toggleMenu = (menu: MenuType, buttonRef: React.RefObject<HTMLButtonElement>) => {
+    if (openMenu === menu) {
+      setOpenMenu(null);
+    } else {
+      // Calculate position based on button location
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuPosition({
+          top: rect.bottom + 4, // 4px gap below button
+          left: rect.left,
+        });
+      }
+      setOpenMenu(menu);
+    }
   };
 
   const closeMenu = () => {
@@ -119,18 +135,22 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* File Menu */}
       <div className="dropdown-menu-container">
         <button
+          ref={fileButtonRef}
           type="button"
           className={`dropdown-menu-button ${openMenu === 'file' ? 'active' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleMenu('file');
+            toggleMenu('file', fileButtonRef);
           }}
         >
           File
         </button>
         {openMenu === 'file' && (
-          <div className="dropdown-menu-content">
+          <div
+            className="dropdown-menu-content"
+            style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+          >
             <button className="dropdown-menu-item" onClick={handleNewDocument}>
               <span>New</span>
               <span className="dropdown-menu-shortcut">Ctrl+N</span>
@@ -154,18 +174,22 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* Edit Menu */}
       <div className="dropdown-menu-container">
         <button
+          ref={editButtonRef}
           type="button"
           className={`dropdown-menu-button ${openMenu === 'edit' ? 'active' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleMenu('edit');
+            toggleMenu('edit', editButtonRef);
           }}
         >
           Edit
         </button>
         {openMenu === 'edit' && (
-          <div className="dropdown-menu-content">
+          <div
+            className="dropdown-menu-content"
+            style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+          >
             <button className="dropdown-menu-item" onClick={() => handleAction(editorActions.undo, 'Undo')}>
               <span>Undo</span>
               <span className="dropdown-menu-shortcut">Ctrl+Z</span>
@@ -211,18 +235,22 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* More Menu */}
       <div className="dropdown-menu-container">
         <button
+          ref={moreButtonRef}
           type="button"
           className={`dropdown-menu-button ${openMenu === 'more' ? 'active' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            toggleMenu('more');
+            toggleMenu('more', moreButtonRef);
           }}
         >
           More
         </button>
         {openMenu === 'more' && (
-          <div className="dropdown-menu-content">
+          <div
+            className="dropdown-menu-content"
+            style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+          >
             <button className="dropdown-menu-item" onClick={() => { openDialog('specialCharDialog'); closeMenu(); }}>
               <span>Insert Special Character</span>
               <span className="dropdown-menu-shortcut">F3</span>
