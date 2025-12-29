@@ -1700,3 +1700,47 @@ Files Modified:
 - Verify all file operations work correctly
 - Consider creating desktop shortcuts or start menu integration
 
+
+## Session: 2025-12-28
+
+### Summary
+Fixed dropdown menu display issues in header. The dropdown menus (File, Edit, More) were being hidden behind tabs and editor content despite multiple z-index adjustments.
+
+### Problem
+Dropdown menus were not visible when clicked - they were rendering behind the tabs bar and editor window, making them unusable.
+
+### Root Cause
+The header had `overflow-x: auto` which created a clipping context that prevented absolutely positioned child elements from extending beyond the header's boundaries. Even with high z-index values, the dropdowns were clipped vertically.
+
+### Solution
+Changed dropdown positioning strategy from `position: absolute` (relative to parent) to `position: fixed` (relative to viewport):
+1. Added refs to each dropdown button (File, Edit, More)
+2. Implemented dynamic position calculation using `getBoundingClientRect()`
+3. Updated CSS to use `position: fixed` instead of `position: absolute`
+4. Applied calculated coordinates via inline styles
+5. Fixed background color to use correct CSS variable (`--color-surface`)
+
+### Technical Changes
+**Files Modified:**
+- `src/components/HeaderDropdownMenus.tsx` - Added button refs, position calculation, inline style positioning
+- `src/components/HeaderDropdownMenus.css` - Changed to `position: fixed`, updated background variable
+- `src/components/EditorTabs.css` - Added `z-index: 100` (attempted fix, not the final solution)
+- `src/App.css` - Added `overflow-y: visible` (attempted fix, not the final solution)
+- `src/components/CodeMirrorEditor.tsx` - Removed debug console.log statements
+
+**Commits:**
+- `fix(ui): fix dropdown z-index stacking context issue`
+- `chore(cleanup): remove debug console.log statements from CodeMirrorEditor`
+- `fix(ui): set z-index on tabs bar to prevent covering dropdown menus`
+- `fix(ui): add overflow-y visible to header to allow dropdowns to display`
+- `fix(ui): use fixed positioning with calculated coords for dropdowns`
+- `fix(ui): use correct CSS variable for dropdown background`
+
+### Key Learning
+CSS stacking contexts and overflow clipping are complex. When `overflow` is set on a container, absolutely positioned children cannot escape its boundaries even with high z-index. Fixed positioning relative to the viewport bypasses these constraints entirely.
+
+### Status
+✅ Dropdown menus now display correctly above all content on both PC and Android
+✅ Dropdowns have proper solid backgrounds
+✅ All functionality working as expected
+
