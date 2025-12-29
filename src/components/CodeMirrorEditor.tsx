@@ -15,6 +15,7 @@ export interface CodeMirrorEditorProps {
   cursorStyle?: 'block' | 'line' | 'underline';
   cursorBlink?: boolean;
   wordWrap?: boolean;
+  lineNumbers?: boolean;
 }
 
 export interface CodeMirrorEditorHandle {
@@ -40,6 +41,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
   cursorStyle = 'line',
   cursorBlink = true,
   wordWrap = true,
+  lineNumbers = true,
 }, ref) => {
   const editorRef = useRef<any>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -389,8 +391,8 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
         placeholder={placeholder}
         style={{ height: '100%' }}
         basicSetup={{
-          lineNumbers: true,
-          highlightActiveLineGutter: true,
+          lineNumbers: lineNumbers,
+          highlightActiveLineGutter: lineNumbers,
           highlightActiveLine: true,
           foldGutter: false,
           dropCursor: true,

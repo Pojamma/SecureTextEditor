@@ -45,15 +45,16 @@
 }
 
 .app-title {
-  flex: 1;
   font-size: 16px;
   font-weight: 500;
   color: var(--color-text);
+  margin-right: 1rem;
 }
 
 .toolbar-actions {
   display: flex;
   gap: 4px;
+  margin-left: auto;
 }
 
 .icon-button {

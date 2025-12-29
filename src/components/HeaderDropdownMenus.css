@@ -1,0 +1,109 @@
+.header-dropdown-menus {
+  display: flex;
+  gap: 0;
+  align-items: center;
+}
+
+.dropdown-menu-container {
+  position: relative;
+}
+
+.dropdown-menu-button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-radius: 4px;
+}
+
+.dropdown-menu-button:hover {
+  background: var(--color-hover);
+}
+
+.dropdown-menu-button.active {
+  background: var(--color-hover);
+}
+
+.dropdown-menu-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 0;
+  z-index: 1000;
+  margin-top: 0.25rem;
+  animation: dropdownSlideIn 0.15s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.dropdown-menu-item:hover {
+  background: var(--color-hover);
+}
+
+.dropdown-menu-shortcut {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-left: 2rem;
+  font-family: monospace;
+}
+
+.dropdown-menu-separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0.5rem 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .header-dropdown-menus {
+    display: none; /* Hide on mobile, use hamburger menu instead */
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .dropdown-menu-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .dropdown-menu-content {
+    min-width: 200px;
+  }
+
+  .dropdown-menu-shortcut {
+    display: none; /* Hide shortcuts on smaller screens to save space */
+  }
+}

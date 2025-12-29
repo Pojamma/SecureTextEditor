@@ -10,6 +10,7 @@ import { useSwipeGesture } from './hooks/useSwipeGesture';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useKeyboard } from './hooks/useKeyboard';
 import { HamburgerMenu } from './components/Menus/HamburgerMenu';
+import { HeaderDropdownMenus } from './components/HeaderDropdownMenus';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
@@ -42,7 +43,7 @@ const App: React.FC = () => {
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
-  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, confirmOnExit, autoLoadLastFile } = useSettingsStore();
+  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, lineNumbers, confirmOnExit, autoLoadLastFile } = useSettingsStore();
   const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog, setEditorActions } = useUIStore();
 
   // Auto-save hook
@@ -847,6 +848,7 @@ Start typing to edit this document...`,
             ☰
           </button>
           <h1 className="app-title">SecureTextEditor</h1>
+          <HeaderDropdownMenus />
           <div className="toolbar-actions">
             <button
               className="icon-button"
@@ -895,6 +897,7 @@ Start typing to edit this document...`,
             cursorStyle={cursorStyle}
             cursorBlink={cursorBlink}
             wordWrap={wordWrap}
+            lineNumbers={lineNumbers}
           />
         </div>
       </main>
