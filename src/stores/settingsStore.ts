@@ -13,6 +13,10 @@ interface SettingsState extends AppSettings {
   toggleLineNumbers: () => void;
   toggleStatusBar: () => void;
   toggleWordWrap: () => void;
+  setCursorStyle: (style: 'block' | 'line' | 'underline') => void;
+  toggleCursorBlink: () => void;
+  setConfirmOnExit: (enabled: boolean) => void;
+  setAutoLoadLastFile: (enabled: boolean) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
 }
@@ -30,6 +34,10 @@ const defaultSettings: AppSettings = {
   wordWrap: true,
   tabSize: 4,
   maxTabs: 10,
+  cursorStyle: 'line',
+  cursorBlink: true,
+  confirmOnExit: false,
+  autoLoadLastFile: true,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -62,6 +70,16 @@ export const useSettingsStore = create<SettingsState>()(
       toggleWordWrap: () => set((state) => ({
         wordWrap: !state.wordWrap
       })),
+
+      setCursorStyle: (cursorStyle) => set({ cursorStyle }),
+
+      toggleCursorBlink: () => set((state) => ({
+        cursorBlink: !state.cursorBlink
+      })),
+
+      setConfirmOnExit: (confirmOnExit) => set({ confirmOnExit }),
+
+      setAutoLoadLastFile: (autoLoadLastFile) => set({ autoLoadLastFile }),
 
       updateSettings: (settings) => set((state) => ({
         ...state,

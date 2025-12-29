@@ -62,6 +62,36 @@
   unicode-bidi: normal;
 }
 
+/* Cursor blink animation */
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Increase font size for CodeMirror search box */
+.codemirror-wrapper .cm-panel.cm-search {
+  font-size: 16px;
+  padding: 8px;
+}
+
+.codemirror-wrapper .cm-panel.cm-search input {
+  font-size: 16px;
+  padding: 6px 8px;
+}
+
+.codemirror-wrapper .cm-panel.cm-search button {
+  font-size: 16px;
+  padding: 6px 12px;
+}
+
+.codemirror-wrapper .cm-panel.cm-search label {
+  font-size: 16px;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .codemirror-wrapper .cm-gutters {
@@ -70,5 +100,20 @@
 
   .codemirror-wrapper .cm-content {
     padding: 8px 4px;
+  }
+
+  /* Larger search box on mobile */
+  .codemirror-wrapper .cm-panel.cm-search {
+    font-size: 18px;
+  }
+
+  .codemirror-wrapper .cm-panel.cm-search input {
+    font-size: 18px;
+    padding: 8px 10px;
+  }
+
+  .codemirror-wrapper .cm-panel.cm-search button {
+    font-size: 18px;
+    padding: 8px 14px;
   }
 }

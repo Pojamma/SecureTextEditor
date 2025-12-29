@@ -12,6 +12,9 @@ export interface CodeMirrorEditorProps {
   fontSize?: number;
   theme?: 'light' | 'dark' | 'solarizedLight' | 'solarizedDark' | 'dracula' | 'nord';
   placeholder?: string;
+  cursorStyle?: 'block' | 'line' | 'underline';
+  cursorBlink?: boolean;
+  wordWrap?: boolean;
 }
 
 export interface CodeMirrorEditorHandle {
@@ -28,6 +31,9 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
   fontSize = 14,
   theme = 'light',
   placeholder,
+  cursorStyle = 'line',
+  cursorBlink = true,
+  wordWrap = true,
 }, ref) => {
   const editorRef = useRef<any>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -201,6 +207,44 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
 
   const colors = getThemeColors(theme);
 
+  // Cursor style mappings
+  const getCursorCSS = () => {
+    const blinkAnimation = cursorBlink ? 'blink 1.2s steps(1) infinite' : 'none';
+
+    switch (cursorStyle) {
+      case 'block':
+        return {
+          width: '0.65em',
+          height: '1em',
+          borderLeft: 'none',
+          borderBottom: 'none',
+          backgroundColor: colors.caret,
+          animation: blinkAnimation,
+        };
+      case 'underline':
+        return {
+          width: '0.65em',
+          height: '0.15em',
+          borderLeft: 'none',
+          borderBottom: `2px solid ${colors.caret}`,
+          backgroundColor: 'transparent',
+          animation: blinkAnimation,
+        };
+      case 'line':
+      default:
+        return {
+          width: '0',
+          height: '1em',
+          borderLeft: `2px solid ${colors.caret}`,
+          borderBottom: 'none',
+          backgroundColor: 'transparent',
+          animation: blinkAnimation,
+        };
+    }
+  };
+
+  const cursorCSS = getCursorCSS();
+
   // Custom theme based on our app themes
   const customTheme = EditorView.theme(
     {
@@ -219,6 +263,9 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
         fontFamily: 'monospace',
         padding: '10px 0',
         caretColor: colors.caret,
+      },
+      '.cm-cursor, .cm-dropCursor': {
+        ...cursorCSS,
       },
       '.cm-line': {
         padding: '0 4px',
@@ -271,7 +318,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
       ...searchKeymap,
       ...historyKeymap,
     ]),
-    EditorView.lineWrapping,
+    ...(wordWrap ? [EditorView.lineWrapping] : []),
     customTheme,
     EditorView.updateListener.of((update: ViewUpdate) => {
       // Store the view reference for programmatic access

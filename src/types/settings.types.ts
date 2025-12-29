@@ -34,6 +34,10 @@ export interface AppSettings {
   wordWrap: boolean;
   tabSize: number;
   maxTabs: number;
+  cursorStyle: 'block' | 'line' | 'underline';
+  cursorBlink: boolean;
+  confirmOnExit: boolean;
+  autoLoadLastFile: boolean;
 }
 
 export interface Session {

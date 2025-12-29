@@ -22,6 +22,7 @@ import './App.css';
 // Lazy load components that aren't immediately needed
 const PasswordDialog = lazy(() => import('./components/Dialogs/PasswordDialog').then(m => ({ default: m.PasswordDialog })));
 const ConfirmDialog = lazy(() => import('./components/Dialogs/ConfirmDialog').then(m => ({ default: m.ConfirmDialog })));
+const SettingsDialog = lazy(() => import('./components/Dialogs/SettingsDialog').then(m => ({ default: m.SettingsDialog })));
 const StatisticsDialog = lazy(() => import('./components/StatisticsDialog').then(m => ({ default: m.StatisticsDialog })));
 const SpecialCharDialog = lazy(() => import('./components/SpecialCharDialog').then(m => ({ default: m.SpecialCharDialog })));
 const SpecialCharsBar = lazy(() => import('./components/SpecialCharsBar').then(m => ({ default: m.SpecialCharsBar })));
@@ -40,7 +41,7 @@ const App: React.FC = () => {
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
-  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible } = useSettingsStore();
+  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, confirmOnExit, autoLoadLastFile } = useSettingsStore();
   const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog } = useUIStore();
 
   // Auto-save hook
@@ -419,6 +420,47 @@ const App: React.FC = () => {
   useEffect(() => {
     // Only run once on mount
     const restoreSessionAsync = async () => {
+      // Check if auto-load is enabled
+      if (!autoLoadLastFile) {
+        // Create welcome document instead
+        const welcomeDoc: OpenDocument = {
+          id: generateId(),
+          path: '',
+          source: 'temp',
+          encrypted: false,
+          content: `Welcome to SecureTextEditor! 🔐
+
+This is a secure, encrypted text editor for Android and Windows.
+
+Features Available:
+• Multi-tab document editing with keyboard shortcuts
+• Tab navigation (Ctrl+Tab, Ctrl+1-9)
+• Session persistence (auto-restore on launch)
+• 6 beautiful themes (Light, Dark, Solarized, Dracula, Nord)
+• Persistent settings
+• Real-time character and line counting
+
+Coming Soon:
+• AES-256-GCM encryption
+• Google Drive integration
+• Local file operations
+• Auto-save functionality
+• Cross-platform deployment
+
+Start typing to edit this document...`,
+          modified: false,
+          cursorPosition: 0,
+          scrollPosition: 0,
+          metadata: {
+            created: formatDate(),
+            modified: formatDate(),
+            filename: 'Welcome.txt',
+          },
+        };
+        addDocument(welcomeDoc);
+        return;
+      }
+
       const session = SessionService.loadSession();
 
       if (session && session.documents.length > 0 && !SessionService.isSessionExpired()) {
@@ -529,8 +571,9 @@ Start typing to edit this document...`,
 
   // Save session before page unload
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (documents.length > 0) {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Save session if auto-load is enabled
+      if (autoLoadLastFile && documents.length > 0) {
         SessionService.saveSession({
           documents,
           activeDocumentId,
@@ -541,11 +584,22 @@ Start typing to edit this document...`,
           },
         });
       }
+
+      // Check if confirm on exit is enabled and there are unsaved changes
+      if (confirmOnExit) {
+        const hasUnsavedChanges = documents.some(doc => doc.modified);
+        if (hasUnsavedChanges) {
+          // Show browser's confirmation dialog
+          e.preventDefault();
+          e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+          return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [documents, activeDocumentId, theme, fontSize, statusBar]);
+  }, [documents, activeDocumentId, theme, fontSize, statusBar, confirmOnExit, autoLoadLastFile]);
 
   // Check if active document is encrypted and needs decryption
   useEffect(() => {
@@ -711,6 +765,16 @@ Start typing to edit this document...`,
         </Suspense>
       )}
 
+      {/* Settings Dialog */}
+      {dialogs.settingsDialog && (
+        <Suspense fallback={<div />}>
+          <SettingsDialog
+            isOpen={dialogs.settingsDialog}
+            onClose={() => closeDialog('settingsDialog')}
+          />
+        </Suspense>
+      )}
+
       {/* Search is now handled natively by CodeMirror (Ctrl+F) */}
 
       <header className="header">
@@ -741,7 +805,7 @@ Start typing to edit this document...`,
             <button
               className="icon-button"
               title="Settings"
-              onClick={() => showNotification('Settings dialog coming soon!', 'info')}
+              onClick={() => openDialog('settingsDialog')}
             >
               ⚙️
             </button>
@@ -768,6 +832,9 @@ Start typing to edit this document...`,
             fontSize={fontSize}
             theme={theme as 'light' | 'dark' | 'solarizedLight' | 'solarizedDark' | 'dracula' | 'nord'}
             placeholder="Start typing... (Try Ctrl+N for new document, or click the ☰ menu)"
+            cursorStyle={cursorStyle}
+            cursorBlink={cursorBlink}
+            wordWrap={wordWrap}
           />
         </div>
       </main>
