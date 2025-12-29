@@ -13,6 +13,8 @@
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  position: relative;
+  z-index: 1000; /* Ensure header is above main content */
 }
 
 .toolbar {
@@ -94,6 +96,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1; /* Lower than header to allow dropdowns to show */
 }
 
 .editor-container {
