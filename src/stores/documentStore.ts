@@ -33,6 +33,13 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   })),
 
   removeDocument: (id) => set((state) => {
+    // Clear content of encrypted documents for security
+    const docToRemove = state.documents.find(doc => doc.id === id);
+    if (docToRemove?.encrypted) {
+      // Explicitly clear the content from memory before removal
+      docToRemove.content = '';
+    }
+
     const newDocs = state.documents.filter(doc => doc.id !== id);
     const newActiveId = state.activeDocumentId === id
       ? (newDocs.length > 0 ? newDocs[newDocs.length - 1].id : null)

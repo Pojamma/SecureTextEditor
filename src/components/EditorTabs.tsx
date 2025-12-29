@@ -3,11 +3,12 @@ import { useDocumentStore } from '../stores/documentStore';
 import { useUIStore } from '../stores/uiStore';
 import { generateId, formatDate } from '../utils/helpers';
 import { OpenDocument } from '../types/document.types';
+import { saveFile, saveExternalFile } from '../services/filesystem.service';
 import './EditorTabs.css';
 
 export const EditorTabs: React.FC = () => {
   const tabsContainerRef = useRef<HTMLDivElement>(null);
-  const { documents, activeDocumentId, addDocument, setActiveDocument, closeDocument } =
+  const { documents, activeDocumentId, addDocument, setActiveDocument, closeDocument, updateDocument } =
     useDocumentStore();
   const { showNotification, showConfirmDialog } = useUIStore();
 
@@ -59,10 +60,41 @@ export const EditorTabs: React.FC = () => {
         cancelText: 'Cancel',
         showThirdOption: true,
         thirdOptionText: "Don't Save",
-        onConfirm: () => {
-          // TODO: Implement save functionality
-          showNotification('Save functionality coming soon!', 'info');
-          closeDocument(documentId);
+        onConfirm: async () => {
+          // Save the document before closing
+          try {
+            // For temp files, user must use Save As
+            if (doc.source === 'temp' || !doc.path) {
+              showNotification('Use File → Save As to save new documents first', 'info');
+              return;
+            }
+
+            // For encrypted files, user must use File → Save (requires password)
+            if (doc.encrypted) {
+              showNotification('Use File → Save for encrypted files (password required)', 'info');
+              return;
+            }
+
+            // Save external file
+            if (doc.source === 'external') {
+              await saveExternalFile(doc);
+              updateDocument(doc.id, { modified: false });
+              showNotification(`Saved "${doc.metadata.filename}"`, 'success');
+              closeDocument(documentId);
+              return;
+            }
+
+            // Save regular file
+            await saveFile(doc);
+            updateDocument(doc.id, { modified: false });
+            showNotification(`Saved "${doc.metadata.filename}"`, 'success');
+            closeDocument(documentId);
+          } catch (error) {
+            showNotification(
+              error instanceof Error ? error.message : 'Failed to save file',
+              'error'
+            );
+          }
         },
         onCancel: () => {
           // Do nothing, just close the dialog

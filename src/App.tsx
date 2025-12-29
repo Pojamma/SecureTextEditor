@@ -23,6 +23,7 @@ import './App.css';
 const PasswordDialog = lazy(() => import('./components/Dialogs/PasswordDialog').then(m => ({ default: m.PasswordDialog })));
 const ConfirmDialog = lazy(() => import('./components/Dialogs/ConfirmDialog').then(m => ({ default: m.ConfirmDialog })));
 const SettingsDialog = lazy(() => import('./components/Dialogs/SettingsDialog').then(m => ({ default: m.SettingsDialog })));
+const HelpDialog = lazy(() => import('./components/Dialogs/HelpDialog').then(m => ({ default: m.HelpDialog })));
 const StatisticsDialog = lazy(() => import('./components/StatisticsDialog').then(m => ({ default: m.StatisticsDialog })));
 const SpecialCharDialog = lazy(() => import('./components/SpecialCharDialog').then(m => ({ default: m.SpecialCharDialog })));
 const SpecialCharsBar = lazy(() => import('./components/SpecialCharsBar').then(m => ({ default: m.SpecialCharsBar })));
@@ -42,7 +43,7 @@ const App: React.FC = () => {
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, confirmOnExit, autoLoadLastFile } = useSettingsStore();
-  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog } = useUIStore();
+  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog, setEditorActions } = useUIStore();
 
   // Auto-save hook
   const { status: autoSaveStatus } = useAutoSave({
@@ -58,6 +59,20 @@ const App: React.FC = () => {
 
   // Keyboard hook for mobile optimization
   const keyboard = useKeyboard();
+
+  // Set editor actions in UI store for menus to access
+  useEffect(() => {
+    setEditorActions({
+      undo: () => editorRef.current?.undo(),
+      redo: () => editorRef.current?.redo(),
+      cut: () => editorRef.current?.cut(),
+      copy: () => editorRef.current?.copy(),
+      paste: () => editorRef.current?.paste(),
+      selectAll: () => editorRef.current?.selectAll(),
+      find: () => editorRef.current?.openSearch(),
+      findAndReplace: () => editorRef.current?.openFindAndReplace(),
+    });
+  }, [setEditorActions]);
 
   // Swipe gesture handler for tab navigation
   const swipeRef = useSwipeGesture({
@@ -215,10 +230,41 @@ const App: React.FC = () => {
             cancelText: 'Cancel',
             showThirdOption: true,
             thirdOptionText: "Don't Save",
-            onConfirm: () => {
-              // TODO: Implement save functionality
-              showNotification('Save functionality coming soon!', 'info');
-              closeDocument(activeDocumentId);
+            onConfirm: async () => {
+              // Save the document before closing
+              try {
+                // For temp files, user must use Save As
+                if (activeDoc.source === 'temp' || !activeDoc.path) {
+                  showNotification('Use File → Save As to save new documents first', 'info');
+                  return;
+                }
+
+                // For encrypted files, user must use File → Save (requires password)
+                if (activeDoc.encrypted) {
+                  showNotification('Use File → Save for encrypted files (password required)', 'info');
+                  return;
+                }
+
+                // Save external file
+                if (activeDoc.source === 'external') {
+                  await saveExternalFile(activeDoc);
+                  updateDocument(activeDoc.id, { modified: false });
+                  showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
+                  closeDocument(activeDocumentId);
+                  return;
+                }
+
+                // Save regular file
+                await saveFile(activeDoc);
+                updateDocument(activeDoc.id, { modified: false });
+                showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
+                closeDocument(activeDocumentId);
+              } catch (error) {
+                showNotification(
+                  error instanceof Error ? error.message : 'Failed to save file',
+                  'error'
+                );
+              }
             },
             onCancel: () => {
               // Do nothing, just close the dialog
@@ -299,8 +345,12 @@ const App: React.FC = () => {
       action: async () => {
         if (activeDoc) {
           try {
-            await copyToClipboard(activeDoc.content);
-            showNotification('Content copied to clipboard', 'success');
+            // Enable clipboard timeout for encrypted documents
+            await copyToClipboard(activeDoc.content, activeDoc.encrypted);
+            const message = activeDoc.encrypted
+              ? 'Content copied (will be cleared in 30 seconds)'
+              : 'Content copied to clipboard';
+            showNotification(message, 'success');
           } catch (error) {
             showNotification('Failed to copy to clipboard', 'error');
           }
@@ -775,6 +825,16 @@ Start typing to edit this document...`,
         </Suspense>
       )}
 
+      {/* Help Dialog */}
+      {dialogs.helpDialog && (
+        <Suspense fallback={<div />}>
+          <HelpDialog
+            isOpen={dialogs.helpDialog}
+            onClose={() => closeDialog('helpDialog')}
+          />
+        </Suspense>
+      )}
+
       {/* Search is now handled natively by CodeMirror (Ctrl+F) */}
 
       <header className="header">
@@ -812,7 +872,7 @@ Start typing to edit this document...`,
             <button
               className="icon-button"
               title="Help"
-              onClick={() => showNotification('Help system coming soon!', 'info')}
+              onClick={() => openDialog('helpDialog')}
             >
               ❓
             </button>

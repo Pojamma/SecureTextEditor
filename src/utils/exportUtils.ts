@@ -122,8 +122,10 @@ export async function shareDocument(filename: string, content: string): Promise<
 
 /**
  * Copy document content to clipboard
+ * @param content - Content to copy
+ * @param clearAfterTimeout - If true, clears clipboard after 30 seconds (for sensitive data)
  */
-export async function copyToClipboard(content: string): Promise<void> {
+export async function copyToClipboard(content: string, clearAfterTimeout: boolean = false): Promise<void> {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     await navigator.clipboard.writeText(content);
   } else {
@@ -136,5 +138,26 @@ export async function copyToClipboard(content: string): Promise<void> {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
+  }
+
+  // If requested, clear clipboard after timeout for security
+  if (clearAfterTimeout) {
+    setTimeout(() => {
+      clearClipboard();
+    }, 30000); // 30 seconds
+  }
+}
+
+/**
+ * Clear clipboard contents (for security purposes)
+ */
+export async function clearClipboard(): Promise<void> {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText('');
+    }
+  } catch (error) {
+    // Silently fail if clipboard clearing fails
+    console.warn('Failed to clear clipboard:', error);
   }
 }

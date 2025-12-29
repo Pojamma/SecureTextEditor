@@ -28,6 +28,16 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
     message: string;
   } | null>(null);
 
+  // Clear all password state from memory
+  const clearPasswordState = () => {
+    setPassword('');
+    setConfirmPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setError('');
+    setPasswordStrength(null);
+  };
+
   // Calculate password strength for encryption/change modes
   useEffect(() => {
     if (mode === 'encrypt' || mode === 'change') {
@@ -40,6 +50,13 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
     }
   }, [password, newPassword, mode]);
 
+  // Clean up password state when component unmounts
+  useEffect(() => {
+    return () => {
+      clearPasswordState();
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -51,6 +68,7 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
         return;
       }
       onConfirm(password);
+      clearPasswordState(); // Clear password from memory after use
       return;
     }
 
@@ -69,6 +87,7 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
         return;
       }
       onConfirm(password);
+      clearPasswordState(); // Clear password from memory after use
       return;
     }
 
@@ -95,8 +114,14 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
         return;
       }
       onConfirm(password, newPassword);
+      clearPasswordState(); // Clear passwords from memory after use
       return;
     }
+  };
+
+  const handleCancel = () => {
+    clearPasswordState(); // Clear password from memory on cancel
+    onCancel();
   };
 
   const getTitle = () => {
@@ -133,11 +158,11 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
   };
 
   return (
-    <div className="password-dialog-overlay" onClick={onCancel}>
+    <div className="password-dialog-overlay" onClick={handleCancel}>
       <div className="password-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="password-dialog-header">
           <h2>{getTitle()}</h2>
-          <button className="close-button" onClick={onCancel} title="Close">
+          <button className="close-button" onClick={handleCancel} title="Close">
             ✕
           </button>
         </div>
@@ -307,7 +332,7 @@ export const PasswordDialog: React.FC<PasswordDialogProps> = ({
             {error && <div className="error-message">{error}</div>}
 
             <div className="dialog-actions">
-              <button type="button" className="button-secondary" onClick={onCancel}>
+              <button type="button" className="button-secondary" onClick={handleCancel}>
                 Cancel
               </button>
               <button type="submit" className="button-primary">

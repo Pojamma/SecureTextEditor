@@ -1,0 +1,302 @@
+.help-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 70vh;
+}
+
+.help-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
+}
+
+.help-tab {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.help-tab:hover {
+  color: var(--color-primary);
+  background: var(--color-hover);
+}
+
+.help-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.help-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.help-intro {
+  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Shortcuts Tab */
+.shortcuts-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.shortcut-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shortcut-category {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.shortcut-item:hover {
+  background: var(--color-hover);
+}
+
+.shortcut-keys {
+  display: inline-block;
+  min-width: 140px;
+  padding: 0.35rem 0.75rem;
+  background: var(--color-secondary-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.shortcut-description {
+  flex: 1;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Features Tab */
+.features-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feature-item {
+  padding: 1rem;
+  background: var(--color-secondary-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-primary);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.feature-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.feature-description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* About Tab */
+.about-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.about-header {
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--color-secondary-bg);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.app-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.app-version {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.about-section {
+  padding: 1rem;
+  background: var(--color-secondary-bg);
+  border-radius: 6px;
+}
+
+.about-section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 0.75rem 0;
+}
+
+.about-section p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.tech-list,
+.tips-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  font-size: 0.9rem;
+}
+
+.tech-list li,
+.tips-list li {
+  margin-bottom: 0.5rem;
+}
+
+.about-footer {
+  text-align: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark, var(--color-primary)) 100%);
+  border-radius: 8px;
+  color: white;
+}
+
+.about-footer p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .help-dialog {
+    max-height: 80vh;
+  }
+
+  .help-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .help-tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .shortcut-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .shortcut-keys {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .feature-item {
+    padding: 0.75rem;
+  }
+
+  .feature-title {
+    font-size: 0.95rem;
+  }
+
+  .feature-description {
+    font-size: 0.85rem;
+  }
+
+  .app-name {
+    font-size: 1.5rem;
+  }
+
+  .about-section {
+    padding: 0.75rem;
+  }
+
+  .about-section h3 {
+    font-size: 1rem;
+  }
+}
+
+/* Scrollbar Styling */
+.help-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.help-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.help-content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.help-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}

@@ -8,6 +8,7 @@ interface DialogState {
   statisticsDialog: boolean;
   specialCharDialog: boolean;
   confirmDialog: boolean;
+  helpDialog: boolean;
 }
 
 interface MenuState {
@@ -72,6 +73,18 @@ interface UIState {
     visible: boolean;
   };
 
+  // Editor actions (set by App component)
+  editorActions: {
+    undo?: () => void;
+    redo?: () => void;
+    cut?: () => void;
+    copy?: () => void;
+    paste?: () => void;
+    selectAll?: () => void;
+    find?: () => void;
+    findAndReplace?: () => void;
+  };
+
   // Actions
   openDialog: (dialog: keyof DialogState) => void;
   closeDialog: (dialog: keyof DialogState) => void;
@@ -97,6 +110,8 @@ interface UIState {
 
   showConfirmDialog: (config: ConfirmDialogConfig) => void;
   hideConfirmDialog: () => void;
+
+  setEditorActions: (actions: UIState['editorActions']) => void;
 }
 
 const initialDialogs: DialogState = {
@@ -107,6 +122,7 @@ const initialDialogs: DialogState = {
   statisticsDialog: false,
   specialCharDialog: false,
   confirmDialog: false,
+  helpDialog: false,
 };
 
 const initialMenus: MenuState = {
@@ -136,6 +152,7 @@ export const useUIStore = create<UIState>((set) => ({
     type: 'info',
     visible: false,
   },
+  editorActions: {},
 
   openDialog: (dialog) => set((state) => ({
     dialogs: { ...state.dialogs, [dialog]: true },
@@ -202,4 +219,6 @@ export const useUIStore = create<UIState>((set) => ({
     dialogs: { ...state.dialogs, confirmDialog: false },
     confirmDialogConfig: null,
   })),
+
+  setEditorActions: (editorActions) => set({ editorActions }),
 }));

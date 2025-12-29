@@ -19,9 +19,15 @@ export interface CodeMirrorEditorProps {
 
 export interface CodeMirrorEditorHandle {
   openSearch: () => void;
+  openFindAndReplace: () => void;
   insertText: (text: string) => void;
   undo: () => void;
   redo: () => void;
+  cut: () => void;
+  copy: () => void;
+  paste: () => void;
+  selectAll: () => void;
+  focus: () => void;
 }
 
 export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(({
@@ -46,6 +52,12 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
         openSearchPanel(viewRef.current);
       }
     },
+    openFindAndReplace: () => {
+      if (viewRef.current) {
+        // CodeMirror's search panel includes replace functionality
+        openSearchPanel(viewRef.current);
+      }
+    },
     insertText: (text: string) => {
       if (viewRef.current) {
         const view = viewRef.current;
@@ -65,6 +77,39 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     redo: () => {
       if (viewRef.current) {
         redo(viewRef.current);
+      }
+    },
+    cut: () => {
+      if (viewRef.current) {
+        document.execCommand('cut');
+        viewRef.current.focus();
+      }
+    },
+    copy: () => {
+      if (viewRef.current) {
+        document.execCommand('copy');
+        viewRef.current.focus();
+      }
+    },
+    paste: () => {
+      if (viewRef.current) {
+        document.execCommand('paste');
+        viewRef.current.focus();
+      }
+    },
+    selectAll: () => {
+      if (viewRef.current) {
+        const view = viewRef.current;
+        const { doc } = view.state;
+        view.dispatch({
+          selection: { anchor: 0, head: doc.length },
+        });
+        view.focus();
+      }
+    },
+    focus: () => {
+      if (viewRef.current) {
+        viewRef.current.focus();
       }
     },
   }));
