@@ -34,6 +34,7 @@ export const HeaderDropdownMenus: React.FC = () => {
   }, [openMenu]);
 
   const toggleMenu = (menu: MenuType) => {
+    console.log('Toggle menu clicked:', menu, 'Current menu:', openMenu);
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
@@ -119,8 +120,13 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* File Menu */}
       <div className="dropdown-menu-container">
         <button
+          type="button"
           className={`dropdown-menu-button ${openMenu === 'file' ? 'active' : ''}`}
-          onClick={() => toggleMenu('file')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu('file');
+          }}
         >
           File
         </button>
@@ -149,8 +155,13 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* Edit Menu */}
       <div className="dropdown-menu-container">
         <button
+          type="button"
           className={`dropdown-menu-button ${openMenu === 'edit' ? 'active' : ''}`}
-          onClick={() => toggleMenu('edit')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu('edit');
+          }}
         >
           Edit
         </button>
@@ -201,8 +212,13 @@ export const HeaderDropdownMenus: React.FC = () => {
       {/* More Menu */}
       <div className="dropdown-menu-container">
         <button
+          type="button"
           className={`dropdown-menu-button ${openMenu === 'more' ? 'active' : ''}`}
-          onClick={() => toggleMenu('more')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMenu('more');
+          }}
         >
           More
         </button>
