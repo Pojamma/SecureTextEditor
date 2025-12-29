@@ -1,9 +1,9 @@
 # SecureTextEditor - Implementation Tasks
 
 **Project**: Secure Multi-Platform Text Editor
-**Status**: Phase 4 Complete - Google Drive Integration Working
+**Status**: Phase 5 Complete - Advanced Features + Settings & File Management
 **Started**: December 20, 2024
-**Last Updated**: December 20, 2024  
+**Last Updated**: December 28, 2024  
 
 ---
 
@@ -178,7 +178,7 @@
 - [x] Close All Tabs (with confirmation for unsaved docs)
 - [x] Confirm before closing unsaved documents
 - [x] Fix: Opening already-open file should switch to existing tab instead of creating duplicate
-- [ ] Add file management features (delete, rename, copy) for local storage files (Deferred to later phase)
+- [x] Add file management features (delete, rename, copy, encrypt/decrypt) for local storage files **COMPLETE (Dec 28, 2024)**
 - [x] Improve active tab visual indicator (make it more distinct/easier to see)
 
 ### Testing - Phase 2
@@ -384,12 +384,44 @@
 - [x] Persist font preferences
 
 ### View Menu Enhancements
-- [ ] Show/hide special chars bar (Pending implementation)
-- [x] Show/hide line numbers (Always visible in CodeMirror)
-- [x] Show/hide status bar
-- [x] Zoom in/out/reset
-- [x] Theme submenu (Cycle through themes)
-- [ ] Font submenu (Deferred)
+- [x] Show/hide special chars bar (Moved to Settings dialog)
+- [x] Show/hide line numbers (Moved to Settings dialog)
+- [x] Show/hide status bar (Moved to Settings dialog)
+- [x] Zoom in/out/reset (Keyboard shortcuts remain: Ctrl+/-, Ctrl+0)
+- [x] Theme submenu (Moved to Settings dialog)
+- [x] Font size selector (Moved to Settings dialog)
+- [x] Auto-save settings (Moved to Settings dialog)
+- [x] **View menu removed** - all settings consolidated in Settings dialog **COMPLETE (Dec 28, 2024)**
+
+### Settings Dialog **NEW (Dec 28, 2024)**
+- [x] Create comprehensive Settings dialog component
+- [x] Implement 3-tab organization (Appearance, Editor, Behavior)
+- [x] Add theme selection (all 6 themes)
+- [x] Add font size slider (8-24px)
+- [x] Add view options (line numbers, status bar, special chars bar)
+- [x] Add cursor style options (Line, Block, Underline)
+- [x] Add cursor blink toggle
+- [x] Add line wrap toggle
+- [x] Add auto-save settings (enable/disable, interval)
+- [x] Add confirm on exit option (prompts for unsaved changes)
+- [x] Add auto-load last session option
+- [x] Implement CodeMirror cursor customization
+- [x] Increase CodeMirror search box font size (16px desktop, 18px mobile)
+- [x] Add Reset to Defaults button
+- [x] Wire Settings button (⚙️) in header to open dialog
+- [x] Persist all settings across sessions
+
+### Local File Management **NEW (Dec 28, 2024)**
+- [x] Add file action menu (⋮) to each file in file picker
+- [x] Implement rename file with validation
+- [x] Implement copy file with auto-naming
+- [x] Implement delete file with confirmation
+- [x] Implement encrypt file (convert plain to encrypted)
+- [x] Implement decrypt file (convert encrypted to plain)
+- [x] Add password prompts for encryption operations
+- [x] Add real-time file list refresh after operations
+- [x] Add error handling and user feedback
+- [x] Update file picker dialog header to "Open Local File"
 
 ### Document Shortcuts
 - [ ] Implement deep linking (securetexteditor:// protocol)
