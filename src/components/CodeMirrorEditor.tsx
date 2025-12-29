@@ -118,17 +118,13 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
 
   // Handle Page Up/Down at the React level to prevent CodeMirror from handling it
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    console.log('Key pressed:', e.key); // DEBUG: Check if handler is called
-
     if (!viewRef.current) {
-      console.log('No viewRef yet'); // DEBUG
       return;
     }
 
     const scroller = viewRef.current.scrollDOM;
 
     if (e.key === 'PageDown') {
-      console.log('PageDown intercepted!'); // DEBUG
       e.preventDefault();
       e.stopPropagation();
 
@@ -139,14 +135,11 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
       const scrollAmount = viewportHeight * 0.9;
       const newScroll = Math.min(currentScroll + scrollAmount, maxScroll);
 
-      console.log(`DEBUG: clientHeight=${viewportHeight}, scrollHeight=${scrollHeight}, scrollTop=${currentScroll}`); // DEBUG
-      console.log(`Scrolling from ${currentScroll} to ${newScroll}`); // DEBUG
       scroller.scrollTop = newScroll;
       return;
     }
 
     if (e.key === 'PageUp') {
-      console.log('PageUp intercepted!'); // DEBUG
       e.preventDefault();
       e.stopPropagation();
 
@@ -155,7 +148,6 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
       const scrollAmount = viewportHeight * 0.9;
       const newScroll = Math.max(currentScroll - scrollAmount, 0);
 
-      console.log(`Scrolling from ${currentScroll} to ${newScroll}`); // DEBUG
       scroller.scrollTop = newScroll;
       return;
     }
