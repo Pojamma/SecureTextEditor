@@ -45,10 +45,13 @@ export async function pickExternalFile(): Promise<{
         console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
-      // Validate that it's text content
-      const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
-      if (isBinary) {
-        throw new Error('This file appears to be a binary file. Please select a text file.');
+      // Validate that it's text content (skip check for .enc files which are JSON)
+      const isEncFile = result.name?.toLowerCase().endsWith('.enc');
+      if (!isEncFile) {
+        const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
+        if (isBinary) {
+          throw new Error('This file appears to be a binary file. Please select a text file.');
+        }
       }
 
       console.log('[ExternalFS] Document picked on Electron:', result.uri);
@@ -79,10 +82,13 @@ export async function pickExternalFile(): Promise<{
         console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
-      // Validate that it's text content (basic check for binary files)
-      const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
-      if (isBinary) {
-        throw new Error('This file appears to be a binary file. Please select a text file.');
+      // Validate that it's text content (skip check for .enc files which are JSON)
+      const isEncFile = result.name?.toLowerCase().endsWith('.enc');
+      if (!isEncFile) {
+        const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
+        if (isBinary) {
+          throw new Error('This file appears to be a binary file. Please select a text file.');
+        }
       }
 
       console.log('[ExternalFS] Document picked with write permissions:', result.uri);
@@ -128,10 +134,13 @@ export async function pickExternalFile(): Promise<{
     throw new Error('Failed to read file content. This may be a binary file.');
   }
 
-  // Validate that it's text content
-  const isBinary = /[\x00-\x08\x0E-\x1F]/.test(content.substring(0, 1000));
-  if (isBinary) {
-    throw new Error('This file appears to be a binary file. Please select a text file.');
+  // Validate that it's text content (skip check for .enc files which are JSON)
+  const isEncFile = file.name?.toLowerCase().endsWith('.enc');
+  if (!isEncFile) {
+    const isBinary = /[\x00-\x08\x0E-\x1F]/.test(content.substring(0, 1000));
+    if (isBinary) {
+      throw new Error('This file appears to be a binary file. Please select a text file.');
+    }
   }
 
   return {
