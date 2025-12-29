@@ -344,6 +344,158 @@ export async function deleteFile(path: string): Promise<void> {
 }
 
 /**
+ * Rename a file
+ */
+export async function renameFile(oldPath: string, newFilename: string): Promise<void> {
+  try {
+    // Check permissions
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
+    // Check if new filename already exists
+    const newPath = newFilename;
+    const exists = await fileExists(newPath);
+    if (exists) {
+      throw new Error(`File "${newFilename}" already exists`);
+    }
+
+    // Read the file content
+    const result = await Filesystem.readFile({
+      path: oldPath,
+      directory: getDirectory(),
+      encoding: Encoding.UTF8,
+    });
+
+    // Write to new filename
+    await Filesystem.writeFile({
+      path: newPath,
+      data: result.data,
+      directory: getDirectory(),
+      encoding: Encoding.UTF8,
+      recursive: true,
+    });
+
+    // Delete old file
+    await deleteFile(oldPath);
+  } catch (error) {
+    console.error('Error renaming file:', error);
+    throw new Error(`Failed to rename file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Copy a file
+ */
+export async function copyFile(sourcePath: string, newFilename: string): Promise<void> {
+  try {
+    // Check permissions
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
+    // Check if new filename already exists
+    const newPath = newFilename;
+    const exists = await fileExists(newPath);
+    if (exists) {
+      throw new Error(`File "${newFilename}" already exists`);
+    }
+
+    // Read the file content
+    const result = await Filesystem.readFile({
+      path: sourcePath,
+      directory: getDirectory(),
+      encoding: Encoding.UTF8,
+    });
+
+    // Write to new filename
+    await Filesystem.writeFile({
+      path: newPath,
+      data: result.data,
+      directory: getDirectory(),
+      encoding: Encoding.UTF8,
+      recursive: true,
+    });
+  } catch (error) {
+    console.error('Error copying file:', error);
+    throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Toggle encryption on a file (encrypt or decrypt)
+ * If the file is encrypted, decrypt it and save as plain text
+ * If the file is plain, encrypt it
+ */
+export async function toggleFileEncryption(
+  path: string,
+  password: string,
+  shouldEncrypt: boolean
+): Promise<void> {
+  try {
+    // Check permissions
+    const hasPermission = await checkPermissions();
+    if (!hasPermission) {
+      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    }
+
+    // Read the current file
+    const fileResult = await readFile(path);
+
+    if (shouldEncrypt && !fileResult.requiresPassword) {
+      // Encrypt a plain file
+      const plainDoc: PlainDocument = {
+        content: fileResult.document.content,
+        metadata: {
+          ...fileResult.document.metadata,
+          encrypted: true,
+          modified: formatDate(),
+        },
+      };
+
+      const encryptedDoc = await encryptDocument(plainDoc, password);
+      const content = JSON.stringify(encryptedDoc, null, 2);
+
+      await Filesystem.writeFile({
+        path: path,
+        data: content,
+        directory: getDirectory(),
+        encoding: Encoding.UTF8,
+        recursive: true,
+      });
+    } else if (!shouldEncrypt && fileResult.requiresPassword && fileResult.encryptedData) {
+      // Decrypt an encrypted file
+      const decryptedDoc = await decryptDocument(fileResult.encryptedData, password);
+      const plainDoc: PlainDocument = {
+        content: decryptedDoc.content,
+        metadata: {
+          ...decryptedDoc.metadata,
+          encrypted: false,
+          modified: formatDate(),
+        },
+      };
+
+      const content = JSON.stringify(plainDoc, null, 2);
+
+      await Filesystem.writeFile({
+        path: path,
+        data: content,
+        directory: getDirectory(),
+        encoding: Encoding.UTF8,
+        recursive: true,
+      });
+    } else {
+      throw new Error('File is already in the requested encryption state');
+    }
+  } catch (error) {
+    console.error('Error toggling file encryption:', error);
+    throw new Error(`Failed to toggle encryption: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Read external file (from anywhere on device) via native file picker
  * Returns document ready to be added to the store
  */
@@ -549,6 +701,9 @@ export const FilesystemService = {
   fileExists,
   listFiles,
   deleteFile,
+  renameFile,
+  copyFile,
+  toggleFileEncryption,
   getFileExtension,
   readExternalFile,
   decryptExternalFile,
