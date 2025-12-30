@@ -183,9 +183,15 @@ const App: React.FC = () => {
 
           // Save external file
           if (activeDoc.source === 'external') {
-            await saveExternalFile(activeDoc);
-            updateDocument(activeDoc.id, { modified: false });
-            showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
+            const result = await saveExternalFile(activeDoc);
+            const updates: any = { modified: false };
+            if (result.newUri) updates.externalUri = result.newUri;
+            if (result.newFilename) {
+              updates.metadata = { ...activeDoc.metadata, filename: result.newFilename };
+              updates.path = result.newFilename;
+            }
+            updateDocument(activeDoc.id, updates);
+            showNotification(`Saved "${result.newFilename || activeDoc.metadata.filename}"`, 'success');
             return;
           }
 

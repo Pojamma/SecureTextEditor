@@ -377,15 +377,29 @@ export const FileMenu: React.FC = () => {
       } else {
         // Save based on source type
         if (activeDoc.source === 'external') {
-          await saveExternalFile(activeDoc);
+          const result = await saveExternalFile(activeDoc);
+          const updates: any = { modified: false };
+          if (result.newUri) {
+            updates.externalUri = result.newUri;
+          }
+          if (result.newFilename) {
+            updates.metadata = { ...activeDoc.metadata, filename: result.newFilename };
+            updates.path = result.newFilename;
+          }
+          if (activeDocumentId) {
+            updateDocument(activeDocumentId, updates);
+          }
+          showNotification(
+            `Saved "${result.newFilename || activeDoc.metadata.filename}"`,
+            'success'
+          );
         } else {
           await saveFile(activeDoc);
+          if (activeDocumentId) {
+            updateDocument(activeDocumentId, { modified: false });
+          }
+          showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
         }
-
-        if (activeDocumentId) {
-          updateDocument(activeDocumentId, { modified: false });
-        }
-        showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
         closeAllMenus();
       }
     } catch (error) {
@@ -470,15 +484,29 @@ export const FileMenu: React.FC = () => {
       } else {
         // Save based on source type
         if (activeDoc.source === 'external') {
-          await saveExternalFile(activeDoc, password);
+          const result = await saveExternalFile(activeDoc, password);
+          const updates: any = { modified: false };
+          if (result.newUri) {
+            updates.externalUri = result.newUri;
+          }
+          if (result.newFilename) {
+            updates.metadata = { ...activeDoc.metadata, filename: result.newFilename };
+            updates.path = result.newFilename;
+          }
+          if (activeDocumentId) {
+            updateDocument(activeDocumentId, updates);
+          }
+          showNotification(
+            `Saved "${result.newFilename || activeDoc.metadata.filename}"`,
+            'success'
+          );
         } else {
           await saveFile(activeDoc, password);
+          if (activeDocumentId) {
+            updateDocument(activeDocumentId, { modified: false });
+          }
+          showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
         }
-
-        if (activeDocumentId) {
-          updateDocument(activeDocumentId, { modified: false });
-        }
-        showNotification(`Saved "${activeDoc.metadata.filename}"`, 'success');
         closeAllMenus();
       }
     } catch (error) {
@@ -514,12 +542,20 @@ export const FileMenu: React.FC = () => {
 
           // Save based on source type
           if (doc.source === 'external') {
-            await saveExternalFile(doc);
+            const result = await saveExternalFile(doc);
+            const updates: any = { modified: false };
+            if (result.newUri) {
+              updates.externalUri = result.newUri;
+            }
+            if (result.newFilename) {
+              updates.metadata = { ...doc.metadata, filename: result.newFilename };
+              updates.path = result.newFilename;
+            }
+            updateDocument(doc.id, updates);
           } else {
             await saveFile(doc);
+            updateDocument(doc.id, { modified: false });
           }
-
-          updateDocument(doc.id, { modified: false });
           savedCount++;
         } catch (error) {
           console.error(`Failed to save ${doc.metadata.filename}:`, error);
