@@ -2,10 +2,10 @@ import { WebPlugin } from '@capacitor/core';
 import type { FileWriterPlugin } from './definitions';
 
 export class FileWriterElectron extends WebPlugin implements FileWriterPlugin {
-  async writeToUri(options: { uri: string; content: string }): Promise<{ success: boolean }> {
+  async writeToUri(options: { uri: string; content: string; isBinary?: boolean }): Promise<{ success: boolean }> {
     try {
       // @ts-ignore - electron IPC is available in Electron context
-      const result = await window.electronAPI?.invoke('file:write-external', options.uri, options.content);
+      const result = await window.electronAPI?.invoke('file:write-external', options.uri, options.content, options.isBinary);
       return result || { success: true };
     } catch (error) {
       throw new Error(`Failed to write file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -17,11 +17,15 @@ export class FileWriterElectron extends WebPlugin implements FileWriterPlugin {
     return { success: true };
   }
 
-  async pickDocument(): Promise<{ uri: string; name: string; content: string; mimeType: string }> {
+  async pickDocument(): Promise<{ uri: string; name: string; content: string; mimeType: string; isBinary: boolean }> {
     try {
       // @ts-ignore - electron IPC is available in Electron context
       const result = await window.electronAPI?.invoke('file:pick-external');
-      return result;
+      const isEncFile = result.name?.toLowerCase().endsWith('.enc') || false;
+      return {
+        ...result,
+        isBinary: isEncFile,
+      };
     } catch (error) {
       throw new Error(`Failed to pick document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

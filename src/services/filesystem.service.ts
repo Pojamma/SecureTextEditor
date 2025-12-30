@@ -16,7 +16,7 @@ const getDirectory = () => {
   return platform === 'web' ? Directory.Documents : Directory.Data;
 };
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
-import { encryptDocument, decryptDocument, isEncrypted } from './encryption.service';
+import { encryptDocument, decryptDocument, isEncrypted, encryptToBinary, decryptFromBinary, isBinaryEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
 import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri } from './externalFilesystem.service';
 
@@ -502,7 +502,7 @@ export async function toggleFileEncryption(
 export async function readExternalFile(): Promise<{
   document: OpenDocument;
   requiresPassword: boolean;
-  encryptedData?: EncryptedDocument;
+  encryptedData?: EncryptedDocument | string; // Can be JSON format or binary format (base64)
 }> {
   try {
     const fileData = await pickExternalFile();
@@ -510,32 +510,51 @@ export async function readExternalFile(): Promise<{
     console.log('[FS] External file picked:', {
       filename: fileData.filename,
       contentLength: fileData.content.length,
-      contentPreview: fileData.content.substring(0, 200),
+      isBinary: fileData.isBinary,
     });
 
-    // Try to parse as JSON (could be encrypted or PlainDocument format)
+    // Check if this is a binary encrypted file (.enc)
+    if (fileData.isBinary && isBinaryEncrypted(fileData.content)) {
+      console.log('[FS] Binary encrypted file detected');
+      return {
+        document: {
+          id: generateId(),
+          path: fileData.filename,
+          source: 'external',
+          encrypted: true,
+          content: '',
+          modified: false,
+          cursorPosition: 0,
+          scrollPosition: 0,
+          externalUri: fileData.uri,
+          metadata: {
+            filename: fileData.filename,
+            created: formatDate(),
+            modified: formatDate(),
+            encrypted: true,
+          },
+        },
+        requiresPassword: true,
+        encryptedData: fileData.content, // Base64 binary data
+      };
+    }
+
+    // Try to parse as JSON (could be encrypted or PlainDocument format - legacy)
     let parsedData;
     try {
       parsedData = JSON.parse(fileData.content);
-      console.log('[FS] Parsed JSON successfully:', {
-        hasEncrypted: 'encrypted' in parsedData,
-        encryptedValue: parsedData.encrypted,
-        hasCiphertext: 'ciphertext' in parsedData,
-        hasSalt: 'salt' in parsedData,
-        hasIv: 'iv' in parsedData,
-        keys: Object.keys(parsedData),
-      });
+      console.log('[FS] Parsed JSON successfully');
     } catch (error) {
-      console.log('[FS] Failed to parse as JSON:', error);
+      console.log('[FS] Not JSON format, treating as plain text');
       parsedData = null;
     }
 
-    // Check if file is encrypted
+    // Check if file is encrypted (legacy JSON format)
     const isEncryptedFile = parsedData && isEncrypted(parsedData);
-    console.log('[FS] Is encrypted file:', isEncryptedFile);
+    console.log('[FS] Is encrypted file (JSON format):', isEncryptedFile);
 
     if (isEncryptedFile) {
-      console.log('[FS] Returning encrypted file, will prompt for password');
+      console.log('[FS] Returning encrypted file (legacy JSON format), will prompt for password');
       return {
         document: {
           id: generateId(),
@@ -607,27 +626,45 @@ export async function readExternalFile(): Promise<{
 
 /**
  * Decrypt an external encrypted file
+ * Handles both binary format (base64 string) and legacy JSON format
  */
 export async function decryptExternalFile(
-  encryptedData: EncryptedDocument,
+  encryptedData: EncryptedDocument | string,
   password: string,
   filename: string,
   uri: string
 ): Promise<OpenDocument> {
   try {
-    const plainDoc = await decryptDocument(encryptedData, password);
+    let content: string;
+
+    // Check if this is binary format (base64 string) or JSON format
+    if (typeof encryptedData === 'string') {
+      // Binary format - decrypt from base64
+      console.log('[FS] Decrypting binary format');
+      content = await decryptFromBinary(encryptedData, password);
+    } else {
+      // Legacy JSON format
+      console.log('[FS] Decrypting JSON format (legacy)');
+      const plainDoc = await decryptDocument(encryptedData, password);
+      content = plainDoc.content;
+    }
 
     return {
       id: generateId(),
       path: filename,
       source: 'external',
       encrypted: true,
-      content: plainDoc.content,
+      content: content,
       modified: false,
       cursorPosition: 0,
       scrollPosition: 0,
       externalUri: uri,
-      metadata: plainDoc.metadata,
+      metadata: {
+        filename: filename,
+        created: formatDate(),
+        modified: formatDate(),
+        encrypted: true,
+      },
     };
   } catch (error) {
     console.error('Decryption error:', error);
@@ -646,45 +683,24 @@ export async function saveExternalFile(document: OpenDocument, password?: string
 
   try {
     let content: string;
+    let isBinary = false;
 
     if (document.encrypted && password) {
-      // Encrypt and save
-      const plainDoc: PlainDocument = {
-        content: document.content,
-        metadata: {
-          ...document.metadata,
-          modified: formatDate(),
-        },
-      };
-
-      const encryptedDoc = await encryptDocument(plainDoc, password);
-      content = JSON.stringify(encryptedDoc, null, 2);
+      // Encrypt and save as binary format
+      console.log('[FS] Encrypting to binary format');
+      content = await encryptToBinary(document.content, password);
+      isBinary = true;
     } else if (document.encrypted && !password) {
       throw new Error('Password required to save encrypted document');
     } else {
-      // For plain text files that were originally plain text (not in JSON format),
-      // save as plain text. Otherwise save as JSON.
-      // We can detect this by checking if the file had metadata when opened
-      const hasStructuredMetadata = document.metadata.created !== document.metadata.modified;
-
-      if (hasStructuredMetadata) {
-        // Save as JSON format
-        const plainDoc: PlainDocument = {
-          content: document.content,
-          metadata: {
-            ...document.metadata,
-            modified: formatDate(),
-          },
-        };
-        content = JSON.stringify(plainDoc, null, 2);
-      } else {
-        // Save as plain text (original format)
-        content = document.content;
-      }
+      // Save as plain text (restore original format)
+      console.log('[FS] Saving as plain text');
+      content = document.content;
+      isBinary = false;
     }
 
     // Write back to the external URI
-    await saveToExternalUri(document.externalUri, content);
+    await saveToExternalUri(document.externalUri, content, isBinary);
   } catch (error) {
     console.error('Error saving external file:', error);
     throw new Error(

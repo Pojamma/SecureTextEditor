@@ -24,7 +24,9 @@ public class FileWriterPlugin extends Plugin {
         android.util.Log.d(TAG, "writeToUri called");
         String uriString = call.getString("uri");
         String content = call.getString("content");
+        Boolean isBinary = call.getBoolean("isBinary", false);
         android.util.Log.d(TAG, "URI: " + uriString);
+        android.util.Log.d(TAG, "Binary mode: " + isBinary);
 
         if (uriString == null || uriString.isEmpty()) {
             call.reject("URI is required");
@@ -58,7 +60,16 @@ public class FileWriterPlugin extends Plugin {
                     call.reject("Failed to open output stream for URI");
                     return;
                 }
-                out.write(content.getBytes(StandardCharsets.UTF_8));
+
+                if (isBinary) {
+                    // Decode base64 and write as binary
+                    byte[] binaryData = android.util.Base64.decode(content, android.util.Base64.NO_WRAP);
+                    out.write(binaryData);
+                } else {
+                    // Write as UTF-8 text
+                    out.write(content.getBytes(StandardCharsets.UTF_8));
+                }
+
                 out.flush();
                 android.util.Log.d(TAG, "Successfully wrote to URI");
             }
@@ -145,32 +156,51 @@ public class FileWriterPlugin extends Plugin {
             resolver.takePersistableUriPermission(uri, flags);
             android.util.Log.d(TAG, "Took persistable permissions for: " + uri.toString());
 
+            // Get file name first to determine if binary
+            String fileName = uri.getLastPathSegment();
+            if (fileName == null) {
+                fileName = "Untitled.txt";
+            }
+
+            // Check if this is a binary encrypted file
+            boolean isBinaryFile = fileName.toLowerCase().endsWith(".enc");
+
             // Read file content
-            StringBuilder content = new StringBuilder();
+            String content;
             try (InputStream in = resolver.openInputStream(uri)) {
                 if (in == null) {
                     call.reject("Failed to open input stream");
                     return;
                 }
 
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    content.append(new String(buffer, 0, bytesRead, StandardCharsets.UTF_8));
+                if (isBinaryFile) {
+                    // Read as binary and encode to base64
+                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                    byte[] readBuffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = in.read(readBuffer)) != -1) {
+                        buffer.write(readBuffer, 0, bytesRead);
+                    }
+                    byte[] fileBytes = buffer.toByteArray();
+                    content = android.util.Base64.encodeToString(fileBytes, android.util.Base64.NO_WRAP);
+                } else {
+                    // Read as text (UTF-8)
+                    StringBuilder textContent = new StringBuilder();
+                    byte[] textBuffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = in.read(textBuffer)) != -1) {
+                        textContent.append(new String(textBuffer, 0, bytesRead, StandardCharsets.UTF_8));
+                    }
+                    content = textContent.toString();
                 }
-            }
-
-            // Get file name
-            String fileName = uri.getLastPathSegment();
-            if (fileName == null) {
-                fileName = "Untitled.txt";
             }
 
             JSObject ret = new JSObject();
             ret.put("uri", uri.toString());
             ret.put("name", fileName);
-            ret.put("content", content.toString());
+            ret.put("content", content);
             ret.put("mimeType", resolver.getType(uri));
+            ret.put("isBinary", isBinaryFile);
 
             call.resolve(ret);
 

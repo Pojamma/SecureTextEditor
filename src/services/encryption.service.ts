@@ -61,6 +61,20 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 /**
+ * Convert binary data (Uint8Array) to base64 string for storage/transmission
+ */
+export function binaryToBase64(bytes: Uint8Array): string {
+  return uint8ArrayToBase64(bytes);
+}
+
+/**
+ * Convert base64 string back to binary data (Uint8Array)
+ */
+export function base64ToBinary(base64: string): Uint8Array {
+  return base64ToUint8Array(base64);
+}
+
+/**
  * Derive encryption key from password using PBKDF2
  */
 async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -315,6 +329,108 @@ export function isEncrypted(data: any): data is EncryptedDocument {
 }
 
 /**
+ * Encrypt text to binary format (for .enc files)
+ * Returns base64-encoded binary data: [salt(16)][iv(12)][ciphertext]
+ */
+export async function encryptToBinary(plaintext: string, password: string): Promise<string> {
+  if (!password || password.length < 3) {
+    throw new Error('Password must be at least 3 characters long');
+  }
+
+  try {
+    // Generate random salt and IV
+    const salt = getRandomBytes(SALT_LENGTH);
+    const iv = getRandomBytes(IV_LENGTH);
+
+    // Derive encryption key
+    const key = await deriveKey(password, salt);
+
+    // Convert plaintext to bytes
+    const plaintextBytes = stringToUint8Array(plaintext);
+
+    // Encrypt using AES-GCM
+    const ciphertextBytes = await crypto.subtle.encrypt(
+      {
+        name: 'AES-GCM',
+        iv: iv as BufferSource,
+      },
+      key,
+      plaintextBytes as BufferSource
+    );
+
+    // Combine: salt + iv + ciphertext
+    const combined = new Uint8Array(SALT_LENGTH + IV_LENGTH + ciphertextBytes.byteLength);
+    combined.set(salt, 0);
+    combined.set(iv, SALT_LENGTH);
+    combined.set(new Uint8Array(ciphertextBytes), SALT_LENGTH + IV_LENGTH);
+
+    // Return as base64 for transmission
+    return uint8ArrayToBase64(combined);
+  } catch (error) {
+    console.error('Binary encryption failed:', error);
+    throw new Error('Failed to encrypt file');
+  }
+}
+
+/**
+ * Decrypt binary format (from .enc files)
+ * Expects base64-encoded binary data: [salt(16)][iv(12)][ciphertext]
+ */
+export async function decryptFromBinary(binaryData: string, password: string): Promise<string> {
+  if (!password) {
+    throw new Error('Password is required for decryption');
+  }
+
+  try {
+    // Decode from base64
+    const combined = base64ToUint8Array(binaryData);
+
+    // Check minimum length
+    if (combined.length < SALT_LENGTH + IV_LENGTH) {
+      throw new Error('Invalid encrypted file format');
+    }
+
+    // Extract salt, iv, and ciphertext
+    const salt = combined.slice(0, SALT_LENGTH);
+    const iv = combined.slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
+    const ciphertext = combined.slice(SALT_LENGTH + IV_LENGTH);
+
+    // Derive decryption key
+    const key = await deriveKey(password, salt);
+
+    // Decrypt using AES-GCM
+    const plaintextBytes = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv: iv as BufferSource,
+      },
+      key,
+      ciphertext as BufferSource
+    );
+
+    // Convert bytes to string
+    return uint8ArrayToString(new Uint8Array(plaintextBytes));
+  } catch (error) {
+    console.error('Binary decryption failed:', error);
+    throw new Error('Failed to decrypt file. Wrong password or corrupted file.');
+  }
+}
+
+/**
+ * Check if binary data looks like an encrypted file
+ * Returns true if it has the minimum expected length
+ */
+export function isBinaryEncrypted(binaryData: string): boolean {
+  try {
+    const combined = base64ToUint8Array(binaryData);
+    // Must have at least salt + iv + some ciphertext
+    return combined.length >= SALT_LENGTH + IV_LENGTH + 16;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Export for testing
  */
 export const EncryptionService = {
@@ -322,6 +438,11 @@ export const EncryptionService = {
   decryptDocument,
   validatePassword,
   isEncrypted,
+  encryptToBinary,
+  decryptFromBinary,
+  isBinaryEncrypted,
+  binaryToBase64,
+  base64ToBinary,
   // Export for testing purposes
   _test: {
     encryptText,

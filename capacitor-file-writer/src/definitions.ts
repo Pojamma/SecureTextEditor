@@ -1,8 +1,9 @@
 export interface FileWriterPlugin {
   /**
    * Write content to a file URI (Android content:// URIs)
+   * For binary files, content should be base64-encoded
    */
-  writeToUri(options: { uri: string; content: string }): Promise<{ success: boolean }>;
+  writeToUri(options: { uri: string; content: string; isBinary?: boolean }): Promise<{ success: boolean }>;
 
   /**
    * Take persistable URI permission for a file
@@ -13,11 +14,13 @@ export interface FileWriterPlugin {
   /**
    * Pick a document with write permissions (Android only)
    * Returns the file URI, name, and content
+   * For .enc files, content is base64-encoded binary data
    */
   pickDocument(): Promise<{
     uri: string;
     name: string;
     content: string;
     mimeType: string;
+    isBinary: boolean;
   }>;
 }

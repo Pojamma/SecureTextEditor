@@ -22,6 +22,7 @@ export async function pickExternalFile(): Promise<{
   content: string;
   mimeType: string;
   size: number;
+  isBinary: boolean;
 }> {
   const platform = Capacitor.getPlatform();
 
@@ -62,6 +63,7 @@ export async function pickExternalFile(): Promise<{
         content: result.content,
         mimeType: result.mimeType || 'text/plain',
         size: size,
+        isBinary: result.isBinary || false,
       };
     } catch (error) {
       throw new Error(
@@ -99,6 +101,7 @@ export async function pickExternalFile(): Promise<{
         content: result.content,
         mimeType: result.mimeType || 'text/plain',
         size: size,
+        isBinary: result.isBinary || false,
       };
     } catch (error) {
       throw new Error(
@@ -149,6 +152,7 @@ export async function pickExternalFile(): Promise<{
     content: content,
     mimeType: file.mimeType || 'text/plain',
     size: size,
+    isBinary: file.name?.toLowerCase().endsWith('.enc') || false,
   };
 }
 
@@ -172,18 +176,19 @@ export async function checkExternalFileAccess(uri: string): Promise<boolean> {
 /**
  * Save content to external URI
  * Writes content back to the original file location
+ * For binary files, content should be base64-encoded
  */
-export async function saveToExternalUri(uri: string, content: string): Promise<void> {
+export async function saveToExternalUri(uri: string, content: string, isBinary: boolean = false): Promise<void> {
   const platform = Capacitor.getPlatform();
   console.log('[ExternalFS] Platform detected:', platform);
   console.log('[ExternalFS] URI:', uri);
-  console.log('[ExternalFS] FileWriter plugin:', FileWriter);
+  console.log('[ExternalFS] Binary mode:', isBinary);
 
   if (platform === 'android' && uri.startsWith('content://')) {
     // Use native plugin for Android content:// URIs
     console.log('[ExternalFS] Calling FileWriter.writeToUri for Android');
     try {
-      const result = await FileWriter.writeToUri({ uri, content });
+      const result = await FileWriter.writeToUri({ uri, content, isBinary });
       console.log('[ExternalFS] Write successful:', result);
     } catch (error) {
       console.error('[ExternalFS] Write failed:', error);
@@ -195,7 +200,7 @@ export async function saveToExternalUri(uri: string, content: string): Promise<v
     // Use FileWriter plugin for Electron (writes via IPC to main process)
     console.log('[ExternalFS] Calling FileWriter.writeToUri for Electron');
     try {
-      const result = await FileWriter.writeToUri({ uri, content });
+      const result = await FileWriter.writeToUri({ uri, content, isBinary });
       console.log('[ExternalFS] Write successful:', result);
     } catch (error) {
       console.error('[ExternalFS] Write failed:', error);

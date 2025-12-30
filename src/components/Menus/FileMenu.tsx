@@ -31,7 +31,7 @@ export const FileMenu: React.FC = () => {
     filename: string;
   } | null>(null);
   const [pendingExternalFile, setPendingExternalFile] = useState<{
-    data: EncryptedDocument;
+    data: EncryptedDocument | string;
     uri: string;
     filename: string;
   } | null>(null);
