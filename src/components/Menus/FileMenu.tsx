@@ -441,9 +441,31 @@ export const FileMenu: React.FC = () => {
 
     try {
       if (saveAsMode) {
-        const newFilename = prompt('Enter filename:', activeDoc.metadata.filename);
+        let suggestedFilename = activeDoc.metadata.filename;
+        // If encrypting, ensure filename ends with .enc
+        if (password && !suggestedFilename.toLowerCase().endsWith('.enc')) {
+          // Remove existing extension and add .enc
+          const dotIndex = suggestedFilename.lastIndexOf('.');
+          if (dotIndex > 0) {
+            suggestedFilename = suggestedFilename.substring(0, dotIndex) + '.enc';
+          } else {
+            suggestedFilename = suggestedFilename + '.enc';
+          }
+        }
+
+        const newFilename = prompt('Enter filename:', suggestedFilename);
         if (newFilename) {
-          await performSaveAs(newFilename, password);
+          // Ensure .enc extension if password is provided
+          let finalFilename = newFilename;
+          if (password && !finalFilename.toLowerCase().endsWith('.enc')) {
+            const dotIndex = finalFilename.lastIndexOf('.');
+            if (dotIndex > 0) {
+              finalFilename = finalFilename.substring(0, dotIndex) + '.enc';
+            } else {
+              finalFilename = finalFilename + '.enc';
+            }
+          }
+          await performSaveAs(finalFilename, password);
         }
       } else {
         // Save based on source type
