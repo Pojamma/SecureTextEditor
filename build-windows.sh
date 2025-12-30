@@ -72,6 +72,15 @@ rm -rf app-extracted app.asar.backup
 # Step 6: Deploy to Windows
 echo -e "${BLUE}Step 5: Deploying to Windows (C:\\SecureTextEditor)...${NC}"
 
+# Check if the app is running
+if tasklist.exe 2>/dev/null | grep -q "SecureTextEditor.exe"; then
+    echo ""
+    echo -e "${YELLOW}⚠️  WARNING: SecureTextEditor.exe is currently running!${NC}"
+    echo -e "${YELLOW}   Please close the app before continuing.${NC}"
+    echo ""
+    read -p "Press Enter after closing the app, or Ctrl+C to cancel..."
+fi
+
 # Create deployment directory if it doesn't exist
 if [ ! -d "$WINDOWS_DEPLOY_PATH" ]; then
     echo "  → Creating deployment directory..."
