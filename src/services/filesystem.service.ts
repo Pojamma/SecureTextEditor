@@ -700,13 +700,8 @@ export async function saveExternalFile(document: OpenDocument, password?: string
       // Check if filename needs .enc extension
       if (!document.metadata.filename.toLowerCase().endsWith('.enc')) {
         needsRename = true;
-        // Remove existing extension and add .enc
-        const dotIndex = document.metadata.filename.lastIndexOf('.');
-        if (dotIndex > 0) {
-          newFilename = document.metadata.filename.substring(0, dotIndex) + '.enc';
-        } else {
-          newFilename = document.metadata.filename + '.enc';
-        }
+        // Append .enc to filename (keep original extension)
+        newFilename = document.metadata.filename + '.enc';
         console.log(`[FS] Renaming ${document.metadata.filename} → ${newFilename}`);
       }
     } else if (document.encrypted && !password) {
@@ -813,12 +808,8 @@ export async function saveAsToDevice(
 
       // Ensure .enc extension
       if (!filename.toLowerCase().endsWith('.enc')) {
-        const dotIndex = filename.lastIndexOf('.');
-        if (dotIndex > 0) {
-          filename = filename.substring(0, dotIndex) + '.enc';
-        } else {
-          filename = filename + '.enc';
-        }
+        // Append .enc to filename (keep original extension)
+        filename = filename + '.enc';
       }
     } else {
       // Save as plain text

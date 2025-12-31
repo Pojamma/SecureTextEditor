@@ -498,12 +498,8 @@ export const HeaderDropdownMenus: React.FC = () => {
     try {
       let finalFilename = filename;
       if (passwordForSaveAs && !finalFilename.toLowerCase().endsWith('.enc')) {
-        const dotIndex = finalFilename.lastIndexOf('.');
-        if (dotIndex > 0) {
-          finalFilename = finalFilename.substring(0, dotIndex) + '.enc';
-        } else {
-          finalFilename = finalFilename + '.enc';
-        }
+        // Append .enc to filename (keep original extension)
+        finalFilename = finalFilename + '.enc';
       }
 
       await performSaveAs(finalFilename, passwordForSaveAs);
@@ -578,12 +574,8 @@ export const HeaderDropdownMenus: React.FC = () => {
       } else if (saveAsMode) {
         let filename = activeDoc.metadata.filename;
         if (password && !filename.toLowerCase().endsWith('.enc')) {
-          const dotIndex = filename.lastIndexOf('.');
-          if (dotIndex > 0) {
-            filename = filename.substring(0, dotIndex) + '.enc';
-          } else {
-            filename = filename + '.enc';
-          }
+          // Append .enc to filename (keep original extension)
+          filename = filename + '.enc';
         }
 
         setSuggestedFilename(filename);

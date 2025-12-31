@@ -456,12 +456,8 @@ export const FileMenu: React.FC = () => {
       // Ensure .enc extension if password is provided
       let finalFilename = filename;
       if (passwordForSaveAs && !finalFilename.toLowerCase().endsWith('.enc')) {
-        const dotIndex = finalFilename.lastIndexOf('.');
-        if (dotIndex > 0) {
-          finalFilename = finalFilename.substring(0, dotIndex) + '.enc';
-        } else {
-          finalFilename = finalFilename + '.enc';
-        }
+        // Append .enc to filename (keep original extension)
+        finalFilename = finalFilename + '.enc';
       }
 
       await performSaveAs(finalFilename, passwordForSaveAs);
@@ -541,13 +537,8 @@ export const FileMenu: React.FC = () => {
         let filename = activeDoc.metadata.filename;
         // If encrypting, ensure filename ends with .enc
         if (password && !filename.toLowerCase().endsWith('.enc')) {
-          // Remove existing extension and add .enc
-          const dotIndex = filename.lastIndexOf('.');
-          if (dotIndex > 0) {
-            filename = filename.substring(0, dotIndex) + '.enc';
-          } else {
-            filename = filename + '.enc';
-          }
+          // Append .enc to filename (keep original extension)
+          filename = filename + '.enc';
         }
 
         // Show filename dialog
