@@ -1359,9 +1359,13 @@ export const HeaderDropdownMenus: React.FC = () => {
       {showPasswordDialog && (
         <PasswordDialog
           mode={
-            dialogMode === 'encrypt' || dialogMode === 'decrypt'
+            pendingEncryptedData || pendingExternalFile || pendingDriveFile
+              ? 'decrypt'
+              : saveAsToDeviceMode || saveAsMode
+              ? 'encrypt'
+              : dialogMode === 'encrypt' || dialogMode === 'decrypt'
               ? dialogMode
-              : (pendingEncryptedData || pendingExternalFile ? 'decrypt' : 'encrypt')
+              : 'encrypt'
           }
           onConfirm={
             saveAsToDeviceMode || saveAsMode
