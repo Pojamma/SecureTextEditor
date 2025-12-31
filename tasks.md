@@ -702,6 +702,14 @@
 ## Optional Future Enhancements
 
 ### Advanced Features (Post-V1)
+- [ ] **Automatic .enc file extension handling**: Implement automatic file extension changes when encrypting/decrypting files
+  - [ ] When encrypting: automatically rename `file.txt` → `file.enc`
+  - [ ] When decrypting: automatically rename `file.enc` → `file.txt` (or original extension)
+  - [ ] Handle file renaming on Android (DocumentsContract API)
+  - [ ] Handle file renaming on Electron (fs.rename)
+  - [ ] Update document metadata after rename
+  - [ ] Persist renamed URI in session storage
+  - [ ] Add user preference to enable/disable automatic renaming
 - [ ] Markdown preview/rendering
 - [ ] Syntax highlighting for code
 - [ ] Rich text formatting

@@ -1744,3 +1744,141 @@ CSS stacking contexts and overflow clipping are complex. When `overflow` is set 
 ✅ Dropdowns have proper solid backgrounds
 ✅ All functionality working as expected
 
+
+## Session: 2025-12-29 (Evening) PST
+
+### Summary
+Major bug fixes and feature additions for external file handling and encryption workflow. All features tested and working on Windows.
+
+### Accomplishments
+
+#### 1. Fixed "Save As" Dialog Issue
+- **Problem**: `prompt()` doesn't work in Electron, causing "Save As" to fail
+- **Solution**: Created `FilenameDialog` component similar to `PasswordDialog`
+- **Files**: `src/components/Dialogs/FilenameDialog.tsx`, `src/components/Menus/FileMenu.tsx`
+- **Result**: Save As now works perfectly with proper dialog UI
+
+#### 2. Implemented "Save As to Device" Feature
+- **Feature**: New menu option to save any document as a new file to device storage
+- **Implementation**:
+  - Added `createDocument()` method to FileWriter plugin (Android & Electron)
+  - Uses `ACTION_CREATE_DOCUMENT` on Android, `showSaveDialog` on Electron
+  - Prompts user to choose location and filename
+  - Handles both plain text and encrypted files
+  - Automatically switches document to external source after save
+- **Files Modified**:
+  - `capacitor-file-writer/src/definitions.ts`
+  - `capacitor-file-writer/android/.../FileWriterPlugin.java`
+  - `capacitor-file-writer/src/electron.ts`, `src/web.ts`
+  - `electron/src/index.ts`, `electron/src/preload.ts`
+  - `src/services/externalFilesystem.service.ts`
+  - `src/services/filesystem.service.ts`
+  - `src/components/Menus/FileMenu.tsx`
+- **Menu**: File → "Save As to Device" (Ctrl+Shift+E)
+- **Result**: Users can now save to any location on their device
+
+#### 3. Added Manual "Decrypt File" Option
+- **Feature**: Decrypt encrypted files without requiring `.enc` extension
+- **Implementation**:
+  - Added `handleDecryptFile()` in SecurityMenu
+  - Uses `isBinaryEncrypted()` to detect encrypted content
+  - Prompts for password and decrypts in-place
+  - Marks document as decrypted and modified
+- **Files**: `src/components/Menus/SecurityMenu.tsx`
+- **Menu**: Security → "Decrypt File" (Ctrl+D)
+- **Purpose**: Workaround for missing automatic .enc extension handling
+- **Result**: Users can decrypt files regardless of extension
+
+#### 4. Fixed Binary File Detection for Encrypted Files
+- **Problem**: Encrypted files without `.enc` extension were rejected as "binary files" and couldn't be opened
+- **Root Cause**: Files were being read as UTF-8 text, corrupting binary encrypted data
+- **Solution**: Implemented smart binary detection:
+  - Read files as raw bytes first (Buffer on Electron, byte array on Android)
+  - Scan first 1000 bytes for null bytes and control characters
+  - If binary detected: base64-encode the data
+  - If text detected: convert to UTF-8 string
+  - Set `isBinary` flag appropriately
+- **Files Modified**:
+  - `electron/src/index.ts` (file:pick-external handler)
+  - `capacitor-file-writer/android/.../FileWriterPlugin.java` (pickDocumentResult)
+  - `src/services/externalFilesystem.service.ts` (validation logic)
+  - `src/services/filesystem.service.ts` (readExternalFile detection)
+- **Result**: Encrypted files work perfectly regardless of extension
+
+#### 5. Improved Build Script
+- **Enhancement**: Auto-detect and offer to kill running Electron processes
+- **Features**:
+  - Shows all running SecureTextEditor.exe processes
+  - Explains Electron's multi-process architecture
+  - Prompts to auto-kill with one keypress (Y/Enter)
+  - Falls back to manual close option
+- **File**: `build-windows.sh`
+- **Result**: Smoother deployment workflow
+
+#### 6. Documentation Updates
+- **Added**: Future task for automatic `.enc` file extension handling to `tasks.md`
+- **Details**: Documented complete implementation plan including:
+  - Auto-rename on encrypt/decrypt
+  - Platform-specific implementations (DocumentsContract API, fs.rename)
+  - Metadata updates and session persistence
+  - User preference toggle
+
+### Technical Details
+
+#### Binary Encryption Format
+- Format: `[salt(16 bytes)][iv(12 bytes)][encrypted content]`
+- Storage: Base64-encoded for transport
+- Detection: Checks for null bytes and control characters
+- Works with: AES-256-GCM encryption
+
+#### File Detection Logic
+```javascript
+// Electron
+const isBinary = sample.some(byte => 
+  byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13)
+);
+```
+
+```java
+// Android
+for (int i = 0; i < sampleSize; i++) {
+  byte b = fileBytes[i];
+  if (b == 0 || (b > 0 && b < 32 && b != 9 && b != 10 && b != 13)) {
+    isBinaryFile = true;
+    break;
+  }
+}
+```
+
+### Testing Results
+✅ All features tested and working on Windows  
+✅ Encrypt file without .enc extension → Save → Close → Reopen → Decrypt: **Works perfectly**  
+✅ Save As to Device: **Works perfectly**  
+✅ Manual Decrypt File: **Works perfectly**  
+✅ Build script auto-kill: **Works perfectly**  
+
+### Known Limitations
+- Automatic `.enc` file extension renaming not implemented (documented in tasks.md for future)
+- Currently requires manual "Decrypt File" action for files without `.enc` extension
+- File renaming requires platform-specific APIs (Android DocumentsContract, Electron fs.rename)
+
+### Files Changed
+- New: `src/components/Dialogs/FilenameDialog.tsx`
+- Modified: 15+ files across services, plugins, menus, and build scripts
+- Updated: `tasks.md` with future enhancement tasks
+
+### Next Steps (Future)
+- [ ] Implement automatic `.enc` extension handling on encrypt/decrypt
+- [ ] Add file renaming on Android (DocumentsContract API)
+- [ ] Add file renaming on Electron (fs.rename)
+- [ ] Add user preference for auto-rename behavior
+- [ ] Test on Android tablet
+
+### Metrics
+- Session Duration: ~2.5 hours
+- Features Added: 3 major features
+- Bugs Fixed: 2 critical bugs
+- Code Quality: All TypeScript compiles cleanly, no runtime errors
+- User Satisfaction: High - "Everything works great on windows"
+
+---

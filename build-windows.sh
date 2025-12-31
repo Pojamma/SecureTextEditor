@@ -76,9 +76,22 @@ echo -e "${BLUE}Step 5: Deploying to Windows (C:\\SecureTextEditor)...${NC}"
 if tasklist.exe 2>/dev/null | grep -q "SecureTextEditor.exe"; then
     echo ""
     echo -e "${YELLOW}⚠️  WARNING: SecureTextEditor.exe is currently running!${NC}"
-    echo -e "${YELLOW}   Please close the app before continuing.${NC}"
     echo ""
-    read -p "Press Enter after closing the app, or Ctrl+C to cancel..."
+    echo "Active processes:"
+    tasklist.exe /FI "IMAGENAME eq SecureTextEditor.exe" 2>/dev/null | tail -n +4
+    echo ""
+    echo -e "${YELLOW}Note: Electron apps use multiple processes (main, renderer, GPU, etc.)${NC}"
+    echo ""
+    read -p "Kill all SecureTextEditor processes? [Y/n]: " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+        echo "  → Killing all SecureTextEditor processes..."
+        taskkill.exe /F /IM SecureTextEditor.exe 2>/dev/null
+        sleep 1
+        echo -e "${GREEN}  ✓ Processes terminated${NC}"
+    else
+        read -p "Press Enter after manually closing the app, or Ctrl+C to cancel..."
+    fi
 fi
 
 # Create deployment directory if it doesn't exist

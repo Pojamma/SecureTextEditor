@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, forwardRef } from 'react';
+import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { search, highlightSelectionMatches, searchKeymap, openSearchPanel } from '@codemirror/search';
 import { EditorView, keymap, ViewUpdate } from '@codemirror/view';
@@ -26,7 +26,7 @@ export interface CodeMirrorEditorHandle {
   redo: () => void;
   cut: () => void;
   copy: () => void;
-  paste: () => void;
+  paste: () => Promise<void>;
   selectAll: () => void;
   focus: () => void;
 }
@@ -46,6 +46,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
   const editorRef = useRef<any>(null);
   const viewRef = useRef<EditorView | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const pasteHelperRef = useRef<HTMLTextAreaElement>(null);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -93,10 +94,55 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
         viewRef.current.focus();
       }
     },
-    paste: () => {
-      if (viewRef.current) {
-        document.execCommand('paste');
-        viewRef.current.focus();
+    paste: async () => {
+      if (viewRef.current && pasteHelperRef.current) {
+        const view = viewRef.current;
+        const helper = pasteHelperRef.current;
+
+        // Check if Clipboard API is available
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          try {
+            // Try to request clipboard permission first (for browsers that support it)
+            if (navigator.permissions && navigator.permissions.query) {
+              try {
+                const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName });
+                if (permissionStatus.state === 'denied') {
+                  console.warn('Clipboard permission denied, using helper');
+                  // Use helper element
+                  helper.value = '';
+                  helper.focus();
+                  document.execCommand('paste');
+                  return;
+                }
+              } catch (permError) {
+                // Permission API might not support clipboard-read, continue anyway
+                console.log('Permission query not supported, trying direct clipboard access');
+              }
+            }
+
+            // Try to read from clipboard
+            const text = await navigator.clipboard.readText();
+            if (text) {
+              const selection = view.state.selection.main;
+              view.dispatch({
+                changes: { from: selection.from, to: selection.to, insert: text },
+                selection: { anchor: selection.from + text.length },
+              });
+            }
+            view.focus();
+          } catch (error) {
+            console.error('Failed to read clipboard:', error);
+            // Use helper element
+            helper.value = '';
+            helper.focus();
+            document.execCommand('paste');
+          }
+        } else {
+          // Clipboard API not available, use helper element
+          helper.value = '';
+          helper.focus();
+          document.execCommand('paste');
+        }
       }
     },
     selectAll: () => {
@@ -342,6 +388,31 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     { dark: colors.isDark }
   );
 
+  // Set up paste event listener for helper textarea
+  useEffect(() => {
+    const helper = pasteHelperRef.current;
+    if (!helper) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text');
+      if (text && viewRef.current) {
+        const view = viewRef.current;
+        const selection = view.state.selection.main;
+        view.dispatch({
+          changes: { from: selection.from, to: selection.to, insert: text },
+          selection: { anchor: selection.from + text.length },
+        });
+        view.focus();
+      }
+    };
+
+    helper.addEventListener('paste', handlePaste);
+    return () => {
+      helper.removeEventListener('paste', handlePaste);
+    };
+  }, []);
+
   // Extensions for the editor
   const extensions = [
     history(),
@@ -374,6 +445,20 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
 
   return (
     <div className="codemirror-wrapper" ref={wrapperRef} onKeyDown={handleKeyDown}>
+      <textarea
+        ref={pasteHelperRef}
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: '0',
+          width: '1px',
+          height: '1px',
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       <CodeMirror
         ref={editorRef}
         value={value}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDocumentStore } from '@/stores/documentStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
-import { encryptDocument } from '@/services/encryption.service';
+import { encryptDocument, decryptFromBinary, isBinaryEncrypted } from '@/services/encryption.service';
 import { PlainDocument } from '@/types/document.types';
 
 export const SecurityMenu: React.FC = () => {
@@ -23,6 +23,22 @@ export const SecurityMenu: React.FC = () => {
     }
 
     setDialogMode('encrypt');
+    setShowPasswordDialog(true);
+  };
+
+  const handleDecryptFile = () => {
+    if (!activeDoc) {
+      showNotification('No document to decrypt', 'error');
+      return;
+    }
+
+    // Check if the content appears to be binary encrypted
+    if (!isBinaryEncrypted(activeDoc.content)) {
+      showNotification('This file does not appear to be encrypted', 'warning');
+      return;
+    }
+
+    setDialogMode('decrypt');
     setShowPasswordDialog(true);
   };
 
@@ -74,11 +90,29 @@ export const SecurityMenu: React.FC = () => {
 
         showNotification('Document encrypted successfully!', 'success');
         closeAllMenus();
+      } else if (dialogMode === 'decrypt') {
+        // Decrypt the file content
+        const decryptedContent = await decryptFromBinary(activeDoc.content, password);
+
+        // Update the document with decrypted content
+        updateDocument(activeDocumentId, {
+          content: decryptedContent,
+          encrypted: false,
+          modified: true,
+          metadata: {
+            ...activeDoc.metadata,
+            encrypted: false,
+          },
+        });
+
+        showNotification('File decrypted successfully!', 'success');
+        closeAllMenus();
       }
     } catch (error) {
-      console.error('Encryption error:', error);
+      console.error('Encryption/Decryption error:', error);
+      const operation = dialogMode === 'encrypt' ? 'encrypt' : 'decrypt';
       showNotification(
-        error instanceof Error ? error.message : 'Failed to encrypt document',
+        error instanceof Error ? error.message : `Failed to ${operation} document`,
         'error'
       );
     } finally {
@@ -139,6 +173,18 @@ export const SecurityMenu: React.FC = () => {
                 </div>
               </>
             )}
+
+            <div className="menu-separator" />
+
+            <button className="menu-item" onClick={handleDecryptFile}>
+              <span>🔓 Decrypt File</span>
+              <span className="menu-shortcut">Ctrl+D</span>
+            </button>
+            <div className="menu-info">
+              <small>
+                Decrypt a file without .enc extension. Works on any encrypted file.
+              </small>
+            </div>
           </div>
         )}
       </div>

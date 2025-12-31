@@ -9,7 +9,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   invoke: (channel: string, ...args: any[]) => {
     // Whitelist allowed channels for security
-    const allowedChannels = ['file:pick-external', 'file:write-external'];
+    const allowedChannels = ['file:pick-external', 'file:write-external', 'file:create-external'];
     if (allowedChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }

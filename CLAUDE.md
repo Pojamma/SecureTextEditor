@@ -512,6 +512,81 @@ await saveExternalFile(document, password?);
 
 ---
 
+### Menu System Reorganization (December 2025)
+
+**Status**: ✅ **IMPLEMENTED** (December 30, 2025)
+
+The menu system has been reorganized for better accessibility and usability, moving frequently used features to the top toolbar while streamlining the hamburger menu.
+
+**Key Changes**:
+
+1. **Toolbar Dropdown Menus** (Top of screen)
+   - **File Menu**: All file operations + Export options + Security features
+   - **Edit Menu**: Edit operations + Insert submenu (dates, special chars)
+   - **Tools Menu**: Text manipulation tools (sort, convert case, cleanup)
+   - **More Menu**: View options, Settings, Help
+
+2. **Hamburger Menu** (Left sidebar - ☰)
+   - **Recent Files**: Shows last 10 recently opened files
+   - Visual badges for file types (📱 external, ☁️ Google Drive)
+   - One-click to reopen files
+   - Handles encrypted files with password prompt
+
+3. **Mobile-Friendly Features**
+   - All dropdown menus scroll on small devices
+   - Responsive max-height: `calc(100vh - 60px)` on phones
+   - Touch-friendly spacing (0.75rem padding)
+   - Submenus stack vertically on small screens
+   - Keyboard shortcuts hidden on mobile to save space
+
+**Technical Implementation**:
+
+- **Component**: `src/components/HeaderDropdownMenus.tsx` - Main toolbar dropdowns
+- **Component**: `src/components/Menus/RecentFiles.tsx` - Recent files sidebar
+- **Component**: `src/components/Menus/HamburgerMenu.tsx` - Updated to show Recent Files
+- **Styles**: `src/components/HeaderDropdownMenus.css` - Responsive dropdown styles
+
+**Menu Structure**:
+
+```
+Toolbar (Top):
+├─ File ▼
+│  ├─ New, Open, Save operations
+│  ├─ Export (Text, HTML, Share, Clipboard)
+│  ├─ Security (Encrypt, Decrypt, Change Password)
+│  └─ Close Tabs, Google Drive
+├─ Edit ▼
+│  ├─ Undo, Redo, Cut, Copy, Paste
+│  ├─ Find operations
+│  └─ Insert ▶ (Dates, Times, Special Characters)
+├─ Tools ▼
+│  ├─ Statistics
+│  ├─ Sort, Remove Duplicates
+│  ├─ Convert Case ▶ (UPPERCASE, lowercase, Title Case)
+│  └─ Trim Whitespace, Remove Empty Lines
+└─ More ▼
+   ├─ Show/Hide Special Chars Bar
+   ├─ Toggle Status Bar
+   ├─ Settings
+   └─ Help
+
+Hamburger Menu (Left Sidebar):
+└─ Recent Files
+   ├─ document1.txt
+   ├─ notes.txt 📱
+   ├─ ideas.enc
+   └─ [Up to 10 recent files...]
+```
+
+**Benefits**:
+- ✅ Frequently used features easily accessible in toolbar
+- ✅ Standard application menu conventions (File, Edit, Tools)
+- ✅ Recent Files provides quick access to previous work
+- ✅ Fully responsive and mobile-optimized
+- ✅ Better organization of related features (Export + Security in File)
+
+---
+
 ## 🎓 Best Practices
 
 ### Code Quality

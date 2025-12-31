@@ -30,4 +30,19 @@ export class FileWriterElectron extends WebPlugin implements FileWriterPlugin {
       throw new Error(`Failed to pick document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  async createDocument(options: {
+    filename: string;
+    content: string;
+    isBinary?: boolean;
+    mimeType?: string;
+  }): Promise<{ uri: string; name: string }> {
+    try {
+      // @ts-ignore - electron IPC is available in Electron context
+      const result = await window.electronAPI?.invoke('file:create-external', options.filename, options.content, options.isBinary);
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to create document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

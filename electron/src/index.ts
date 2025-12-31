@@ -95,9 +95,24 @@ ipcMain.handle('file:pick-external', async () => {
   const filePath = result.filePaths[0];
 
   try {
-    // Read file content
-    const content = await fs.readFile(filePath, 'utf-8');
+    // Read file as binary buffer first
+    const buffer = await fs.readFile(filePath);
     const stats = await fs.stat(filePath);
+
+    // Try to detect if this is a binary file by checking for null bytes and control characters
+    const sample = buffer.slice(0, Math.min(1000, buffer.length));
+    const isBinary = sample.some(byte => byte === 0 || (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13));
+
+    let content: string;
+    if (isBinary) {
+      // Read as binary and encode to base64
+      content = buffer.toString('base64');
+      console.log('[Electron] File detected as binary, encoded to base64');
+    } else {
+      // Read as UTF-8 text
+      content = buffer.toString('utf-8');
+      console.log('[Electron] File detected as text');
+    }
 
     return {
       uri: filePath,
@@ -105,6 +120,7 @@ ipcMain.handle('file:pick-external', async () => {
       content: content,
       mimeType: 'text/plain',
       size: stats.size,
+      isBinary: isBinary,
     };
   } catch (error) {
     throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -112,11 +128,54 @@ ipcMain.handle('file:pick-external', async () => {
 });
 
 // Write to external file
-ipcMain.handle('file:write-external', async (_event, filePath: string, content: string) => {
+ipcMain.handle('file:write-external', async (_event, filePath: string, content: string, isBinary?: boolean) => {
   try {
-    await fs.writeFile(filePath, content, 'utf-8');
+    if (isBinary) {
+      // Decode base64 and write as binary
+      const buffer = Buffer.from(content, 'base64');
+      await fs.writeFile(filePath, buffer);
+    } else {
+      // Write as text
+      await fs.writeFile(filePath, content, 'utf-8');
+    }
     return { success: true };
   } catch (error) {
     throw new Error(`Failed to write file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// Create new document
+ipcMain.handle('file:create-external', async (_event, filename: string, content: string, isBinary?: boolean) => {
+  const result = await dialog.showSaveDialog({
+    defaultPath: filename,
+    filters: [
+      { name: 'Text Files', extensions: ['txt', 'md', 'enc'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  });
+
+  if (result.canceled || !result.filePath) {
+    throw new Error('Save cancelled');
+  }
+
+  const filePath = result.filePath;
+
+  try {
+    // Write file content
+    if (isBinary) {
+      // Decode base64 and write as binary
+      const buffer = Buffer.from(content, 'base64');
+      await fs.writeFile(filePath, buffer);
+    } else {
+      // Write as text
+      await fs.writeFile(filePath, content, 'utf-8');
+    }
+
+    return {
+      uri: filePath,
+      name: path.basename(filePath),
+    };
+  } catch (error) {
+    throw new Error(`Failed to create file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });

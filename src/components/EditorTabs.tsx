@@ -129,7 +129,7 @@ export const EditorTabs: React.FC = () => {
               {doc.encrypted ? '🔒' : '📄'}
             </span>
             <span className="tab-name">
-              {doc.metadata.filename}
+              {doc.metadata.filename.split(/[/\\:]/).pop() || doc.metadata.filename}
               {doc.modified && <span className="modified-indicator">●</span>}
             </span>
             <button

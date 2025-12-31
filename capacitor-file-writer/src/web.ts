@@ -14,4 +14,13 @@ export class FileWriterWeb extends WebPlugin implements FileWriterPlugin {
   async pickDocument(): Promise<{ uri: string; name: string; content: string; mimeType: string; isBinary: boolean }> {
     throw this.unimplemented('Not implemented on web.');
   }
+
+  async createDocument(_options: {
+    filename: string;
+    content: string;
+    isBinary?: boolean;
+    mimeType?: string;
+  }): Promise<{ uri: string; name: string }> {
+    throw this.unimplemented('Not implemented on web.');
+  }
 }

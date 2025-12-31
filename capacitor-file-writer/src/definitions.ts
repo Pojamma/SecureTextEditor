@@ -23,4 +23,19 @@ export interface FileWriterPlugin {
     mimeType: string;
     isBinary: boolean;
   }>;
+
+  /**
+   * Create a new document and write content to it (Android only)
+   * Prompts user to choose location and filename
+   * For binary files, content should be base64-encoded
+   */
+  createDocument(options: {
+    filename: string;
+    content: string;
+    isBinary?: boolean;
+    mimeType?: string;
+  }): Promise<{
+    uri: string;
+    name: string;
+  }>;
 }

@@ -18,7 +18,7 @@ const getDirectory = () => {
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
 import { encryptDocument, decryptDocument, isEncrypted, encryptToBinary, decryptFromBinary, isBinaryEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
-import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri } from './externalFilesystem.service';
+import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri, saveAsToExternalDevice } from './externalFilesystem.service';
 
 // Re-export for convenience
 export { checkExternalUri as checkExternalFileAccess };
@@ -513,8 +513,8 @@ export async function readExternalFile(): Promise<{
       isBinary: fileData.isBinary,
     });
 
-    // Check if this is a binary encrypted file (.enc)
-    if (fileData.isBinary && isBinaryEncrypted(fileData.content)) {
+    // Check if this is a binary encrypted file (with or without .enc extension)
+    if (isBinaryEncrypted(fileData.content)) {
       console.log('[FS] Binary encrypted file detected');
       return {
         document: {
@@ -790,6 +790,62 @@ export function getFileExtension(filename: string): string {
 }
 
 /**
+ * Save document as a new file to device storage
+ * Prompts user to choose location and filename
+ */
+export async function saveAsToDevice(
+  document: OpenDocument,
+  password?: string
+): Promise<{
+  uri: string;
+  filename: string;
+}> {
+  try {
+    let content: string;
+    let isBinary = false;
+    let filename = document.metadata.filename;
+
+    // If password provided, encrypt the document
+    if (password) {
+      console.log('[FS] Encrypting document for save as to device');
+      content = await encryptToBinary(document.content, password);
+      isBinary = true;
+
+      // Ensure .enc extension
+      if (!filename.toLowerCase().endsWith('.enc')) {
+        const dotIndex = filename.lastIndexOf('.');
+        if (dotIndex > 0) {
+          filename = filename.substring(0, dotIndex) + '.enc';
+        } else {
+          filename = filename + '.enc';
+        }
+      }
+    } else {
+      // Save as plain text
+      console.log('[FS] Saving plain document to device');
+      content = document.content;
+
+      // Remove .enc extension if present
+      if (filename.toLowerCase().endsWith('.enc')) {
+        filename = filename.substring(0, filename.length - 4);
+      }
+    }
+
+    // Use external filesystem service to create the document
+    const result = await saveAsToExternalDevice(filename, content, isBinary);
+
+    console.log('[FS] Document saved to device:', result.uri);
+
+    return result;
+  } catch (error) {
+    console.error('[FS] Failed to save as to device:', error);
+    throw new Error(
+      `Failed to save to device: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
  * Exported service object
  */
 export const FilesystemService = {
@@ -807,5 +863,6 @@ export const FilesystemService = {
   readExternalFile,
   decryptExternalFile,
   saveExternalFile,
+  saveAsToDevice,
   checkExternalFileAccess: checkExternalUri,
 };

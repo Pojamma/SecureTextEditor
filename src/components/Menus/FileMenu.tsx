@@ -6,7 +6,8 @@ import { OpenDocument, EncryptedDocument, PlainDocument } from '@/types/document
 import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
 import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
-import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile } from '@/services/filesystem.service';
+import { FilenameDialog } from '@/components/Dialogs/FilenameDialog';
+import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile, saveAsToDevice } from '@/services/filesystem.service';
 import {
   isAuthenticated,
   signIn,
@@ -20,11 +21,15 @@ export const FileMenu: React.FC = () => {
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showFilenameDialog, setShowFilenameDialog] = useState(false);
+  const [suggestedFilename, setSuggestedFilename] = useState('');
+  const [passwordForSaveAs, setPasswordForSaveAs] = useState<string | undefined>();
   const [pendingEncryptedData, setPendingEncryptedData] = useState<{
     data: EncryptedDocument;
     path: string;
   } | null>(null);
   const [saveAsMode, setSaveAsMode] = useState(false);
+  const [saveAsToDeviceMode, setSaveAsToDeviceMode] = useState(false);
   const [driveAuthenticated, setDriveAuthenticated] = useState(false);
   const [pendingDriveFile, setPendingDriveFile] = useState<{
     fileId: string;
@@ -416,14 +421,58 @@ export const FileMenu: React.FC = () => {
       return;
     }
 
-    const newFilename = prompt('Enter filename:', activeDoc.metadata.filename);
-    if (!newFilename) return;
-
+    // Check if encrypted - need password
     if (activeDoc.encrypted) {
       setSaveAsMode(true);
       setShowPasswordDialog(true);
     } else {
-      performSaveAs(newFilename);
+      // Show filename dialog for plain files
+      setSuggestedFilename(activeDoc.metadata.filename);
+      setPasswordForSaveAs(undefined);
+      setShowFilenameDialog(true);
+    }
+  };
+
+  const handleSaveAsToDevice = () => {
+    if (!activeDoc) {
+      showNotification('No active document to save', 'error');
+      return;
+    }
+
+    // Check if encrypted - need password
+    if (activeDoc.encrypted) {
+      setSaveAsToDeviceMode(true);
+      setShowPasswordDialog(true);
+    } else {
+      // Save directly without password
+      performSaveAsToDevice(undefined);
+    }
+  };
+
+  const handleFilenameConfirm = async (filename: string) => {
+    if (!filename || !activeDoc) return;
+
+    try {
+      // Ensure .enc extension if password is provided
+      let finalFilename = filename;
+      if (passwordForSaveAs && !finalFilename.toLowerCase().endsWith('.enc')) {
+        const dotIndex = finalFilename.lastIndexOf('.');
+        if (dotIndex > 0) {
+          finalFilename = finalFilename.substring(0, dotIndex) + '.enc';
+        } else {
+          finalFilename = finalFilename + '.enc';
+        }
+      }
+
+      await performSaveAs(finalFilename, passwordForSaveAs);
+      setShowFilenameDialog(false);
+      setSaveAsMode(false);
+      setPasswordForSaveAs(undefined);
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to save file',
+        'error'
+      );
     }
   };
 
@@ -450,37 +499,62 @@ export const FileMenu: React.FC = () => {
     }
   };
 
+  const performSaveAsToDevice = async (password?: string) => {
+    if (!activeDoc || !activeDocumentId) return;
+
+    try {
+      const result = await saveAsToDevice(activeDoc, password);
+
+      // Update document to point to new external file
+      updateDocument(activeDocumentId, {
+        path: result.filename,
+        source: 'external',
+        externalUri: result.uri,
+        modified: false,
+        encrypted: !!password,
+        metadata: {
+          ...activeDoc.metadata,
+          filename: result.filename,
+        },
+      });
+
+      showNotification(`Saved to device as "${result.filename}"`, 'success');
+      closeAllMenus();
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to save to device',
+        'error'
+      );
+    }
+  };
+
   const handleSavePassword = async (password: string) => {
     if (!activeDoc) return;
 
     try {
-      if (saveAsMode) {
-        let suggestedFilename = activeDoc.metadata.filename;
+      if (saveAsToDeviceMode) {
+        // Save as to device with password
+        await performSaveAsToDevice(password);
+        setShowPasswordDialog(false);
+        setSaveAsToDeviceMode(false);
+      } else if (saveAsMode) {
+        let filename = activeDoc.metadata.filename;
         // If encrypting, ensure filename ends with .enc
-        if (password && !suggestedFilename.toLowerCase().endsWith('.enc')) {
+        if (password && !filename.toLowerCase().endsWith('.enc')) {
           // Remove existing extension and add .enc
-          const dotIndex = suggestedFilename.lastIndexOf('.');
+          const dotIndex = filename.lastIndexOf('.');
           if (dotIndex > 0) {
-            suggestedFilename = suggestedFilename.substring(0, dotIndex) + '.enc';
+            filename = filename.substring(0, dotIndex) + '.enc';
           } else {
-            suggestedFilename = suggestedFilename + '.enc';
+            filename = filename + '.enc';
           }
         }
 
-        const newFilename = prompt('Enter filename:', suggestedFilename);
-        if (newFilename) {
-          // Ensure .enc extension if password is provided
-          let finalFilename = newFilename;
-          if (password && !finalFilename.toLowerCase().endsWith('.enc')) {
-            const dotIndex = finalFilename.lastIndexOf('.');
-            if (dotIndex > 0) {
-              finalFilename = finalFilename.substring(0, dotIndex) + '.enc';
-            } else {
-              finalFilename = finalFilename + '.enc';
-            }
-          }
-          await performSaveAs(finalFilename, password);
-        }
+        // Show filename dialog
+        setSuggestedFilename(filename);
+        setPasswordForSaveAs(password);
+        setShowPasswordDialog(false);
+        setShowFilenameDialog(true);
       } else {
         // Save based on source type
         if (activeDoc.source === 'external') {
@@ -659,6 +733,11 @@ export const FileMenu: React.FC = () => {
               <span className="menu-shortcut">Ctrl+Shift+S</span>
             </button>
 
+            <button className="menu-item" onClick={handleSaveAsToDevice}>
+              <span>Save As to Device</span>
+              <span className="menu-shortcut">Ctrl+Shift+E</span>
+            </button>
+
             <button className="menu-item" onClick={handleSaveAll}>
               <span>Save All</span>
               <span className="menu-shortcut">Ctrl+Alt+S</span>
@@ -725,6 +804,7 @@ export const FileMenu: React.FC = () => {
             setPendingDriveFile(null);
             setPendingExternalFile(null);
             setSaveAsMode(false);
+            setSaveAsToDeviceMode(false);
           }}
           filename={
             pendingExternalFile?.filename ||
@@ -732,6 +812,19 @@ export const FileMenu: React.FC = () => {
             pendingEncryptedData?.data.metadata.filename ||
             activeDoc?.metadata.filename
           }
+        />
+      )}
+
+      {/* Filename Dialog for Save As */}
+      {showFilenameDialog && (
+        <FilenameDialog
+          suggestedFilename={suggestedFilename}
+          onConfirm={handleFilenameConfirm}
+          onCancel={() => {
+            setShowFilenameDialog(false);
+            setPasswordForSaveAs(undefined);
+            setSaveAsMode(false);
+          }}
         />
       )}
     </>

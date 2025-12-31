@@ -46,12 +46,17 @@ export async function pickExternalFile(): Promise<{
         console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
-      // Validate that it's text content (skip check for .enc files which are JSON)
+      // Validate that it's text content (skip check for .enc files and encrypted files)
       const isEncFile = result.name?.toLowerCase().endsWith('.enc');
       if (!isEncFile) {
         const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
         if (isBinary) {
-          throw new Error('This file appears to be a binary file. Please select a text file.');
+          // Check if it's a binary encrypted file - allow those through
+          const { isBinaryEncrypted } = await import('./encryption.service');
+          if (!isBinaryEncrypted(result.content)) {
+            throw new Error('This file appears to be a binary file. Please select a text file.');
+          }
+          console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
         }
       }
 
@@ -84,12 +89,17 @@ export async function pickExternalFile(): Promise<{
         console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
-      // Validate that it's text content (skip check for .enc files which are JSON)
+      // Validate that it's text content (skip check for .enc files and encrypted files)
       const isEncFile = result.name?.toLowerCase().endsWith('.enc');
       if (!isEncFile) {
         const isBinary = /[\x00-\x08\x0E-\x1F]/.test(result.content.substring(0, 1000));
         if (isBinary) {
-          throw new Error('This file appears to be a binary file. Please select a text file.');
+          // Check if it's a binary encrypted file - allow those through
+          const { isBinaryEncrypted } = await import('./encryption.service');
+          if (!isBinaryEncrypted(result.content)) {
+            throw new Error('This file appears to be a binary file. Please select a text file.');
+          }
+          console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
         }
       }
 
@@ -137,12 +147,17 @@ export async function pickExternalFile(): Promise<{
     throw new Error('Failed to read file content. This may be a binary file.');
   }
 
-  // Validate that it's text content (skip check for .enc files which are JSON)
+  // Validate that it's text content (skip check for .enc files and encrypted files)
   const isEncFile = file.name?.toLowerCase().endsWith('.enc');
   if (!isEncFile) {
     const isBinary = /[\x00-\x08\x0E-\x1F]/.test(content.substring(0, 1000));
     if (isBinary) {
-      throw new Error('This file appears to be a binary file. Please select a text file.');
+      // Check if it's a binary encrypted file - allow those through
+      const { isBinaryEncrypted } = await import('./encryption.service');
+      if (!isBinaryEncrypted(content)) {
+        throw new Error('This file appears to be a binary file. Please select a text file.');
+      }
+      console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
     }
   }
 
@@ -214,6 +229,53 @@ export async function saveToExternalUri(uri: string, content: string, isBinary: 
   } else {
     // Fallback for other platforms
     throw new Error(`External file writing is not supported on platform: ${platform}`);
+  }
+}
+
+/**
+ * Save content as a new file to device storage
+ * Prompts user to choose location and filename
+ * Returns the new URI and filename
+ */
+export async function saveAsToExternalDevice(
+  filename: string,
+  content: string,
+  isBinary: boolean = false
+): Promise<{
+  uri: string;
+  filename: string;
+}> {
+  const platform = Capacitor.getPlatform();
+
+  // Web platform doesn't support creating external files
+  if (platform === 'web') {
+    throw new Error(
+      'Saving to device is not available in web browser. ' +
+        'Please use the native Android app or Windows desktop app.'
+    );
+  }
+
+  try {
+    console.log('[ExternalFS] Creating new document:', filename);
+    console.log('[ExternalFS] Binary mode:', isBinary);
+
+    const result = await FileWriter.createDocument({
+      filename,
+      content,
+      isBinary,
+      mimeType: isBinary ? 'application/octet-stream' : 'text/plain',
+    });
+
+    console.log('[ExternalFS] Document created:', result.uri);
+
+    return {
+      uri: result.uri,
+      filename: result.name,
+    };
+  } catch (error) {
+    throw new Error(
+      `Failed to create document: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

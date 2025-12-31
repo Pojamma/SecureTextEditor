@@ -14,6 +14,7 @@ import { HeaderDropdownMenus } from './components/HeaderDropdownMenus';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
 import { CodeMirrorEditor, CodeMirrorEditorHandle } from './components/CodeMirrorEditor';
+import { ContextMenu } from './components/ContextMenu';
 import { SessionService } from './services/session.service';
 import { readFile, decryptFile, checkExternalFileAccess, saveFile, saveExternalFile } from './services/filesystem.service';
 import { calculateStatistics } from './utils/textUtils';
@@ -39,6 +40,10 @@ const App: React.FC = () => {
     docId: string;
     path: string;
   } | null>(null);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const lastTapRef = useRef<number>(0);
 
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
@@ -745,6 +750,26 @@ Start typing to edit this document...`,
     }
   };
 
+  // Handle context menu (right-click on desktop, double-tap on mobile)
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleDoubleTap = (e: React.TouchEvent) => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double-tap detected
+      e.preventDefault();
+      const touch = e.touches[0] || e.changedTouches[0];
+      setContextMenu({ x: touch.clientX, y: touch.clientY });
+    }
+
+    lastTapRef.current = now;
+  };
+
   // Cycle through themes (for demo)
   const cycleTheme = () => {
     const themes = ['light', 'dark', 'solarizedLight', 'solarizedDark', 'dracula', 'nord'];
@@ -891,7 +916,11 @@ Start typing to edit this document...`,
       <EditorTabs />
 
       <main className="main-content" ref={swipeRef}>
-        <div className="editor-container">
+        <div
+          className="editor-container"
+          onContextMenu={handleContextMenu}
+          onTouchStart={handleDoubleTap}
+        >
           <CodeMirrorEditor
             ref={editorRef}
             value={activeDoc?.content || ''}
@@ -942,6 +971,15 @@ Start typing to edit this document...`,
             )}
           </span>
         </footer>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
       )}
 
       {/* Keyboard Accessory Bar for mobile */}

@@ -1,11 +1,6 @@
 import React from 'react';
 import { useUIStore } from '@/stores/uiStore';
-import { FileMenu } from './FileMenu';
-import { EditMenu } from './EditMenu';
-import { SecurityMenu } from './SecurityMenu';
-import { ToolsMenu } from './ToolsMenu';
-import { InsertMenu } from './InsertMenu';
-import { ExportMenu } from './ExportMenu';
+import { RecentFiles } from './RecentFiles';
 import './Menu.css';
 
 export const HamburgerMenu: React.FC = () => {
@@ -29,12 +24,7 @@ export const HamburgerMenu: React.FC = () => {
         </div>
 
         <div className="menu-content">
-          <FileMenu />
-          <EditMenu />
-          <InsertMenu />
-          <ToolsMenu />
-          <ExportMenu />
-          <SecurityMenu />
+          <RecentFiles />
         </div>
       </div>
     </>

@@ -337,25 +337,41 @@ Examples:
 
 ### 5.2 Menu Structure
 
-#### 5.2.1 Hamburger Menu (☰)
+**Note:** The menu system has been reorganized for better accessibility. Frequently used features are now in the top toolbar, while the hamburger menu (left sidebar) displays recent files.
+
+#### 5.2.1 Toolbar Dropdown Menus (Top)
+
+##### File Menu
 ```
 File
   ├─ New Document              Ctrl+N
   ├─ Open Local File           Ctrl+O
+  ├─ Open from Device          Ctrl+Shift+D
   ├─ Open from Google Drive    Ctrl+Shift+O
   ├─ ─────────────────
   ├─ Save                      Ctrl+S
   ├─ Save As                   Ctrl+Shift+S
+  ├─ Save As to Device         Ctrl+Shift+E
   ├─ Save All                  Ctrl+Alt+S
+  ├─ ─────────────────
+  ├─ Export as Text (.txt)
+  ├─ Export as HTML
+  ├─ Share Document...         Ctrl+Shift+S
+  ├─ Copy to Clipboard         Ctrl+Shift+C
+  ├─ ─────────────────
+  ├─ 🔒 Encrypt Document       Ctrl+E
+  ├─ 🔑 Change Password        (when encrypted)
+  ├─ 🔓 Remove Encryption      (when encrypted)
+  ├─ 🔓 Decrypt File           Ctrl+D
   ├─ ─────────────────
   ├─ Close Tab                 Ctrl+W
   ├─ Close All Tabs
-  └─ ─────────────────
-     Export
-       ├─ Export as PDF
-       ├─ Export as HTML
-       └─ Export to Email
+  ├─ ─────────────────
+  └─ ✓ Connected to Google Drive (or Connect)
+```
 
+##### Edit Menu
+```
 Edit
   ├─ Undo                      Ctrl+Z
   ├─ Redo                      Ctrl+Y
@@ -368,96 +384,89 @@ Edit
   ├─ Find                      Ctrl+F
   ├─ Find and Replace          Ctrl+H
   ├─ Find in All Tabs          Ctrl+Shift+F
-  └─ ─────────────────
-     Insert
-       ├─ Date/Time
-       ├─ Special Character
-       └─ Template
-
-View
-  ├─ Theme                     →
-  │   ├─ Light
-  │   ├─ Dark
-  │   ├─ Solarized Light
-  │   ├─ Solarized Dark
-  │   ├─ Dracula
-  │   └─ Nord
-  ├─ Font                      →
-  │   ├─ Font Family           →
-  │   └─ Font Size             → [8, 10, 12, 14, 16, 18, 20, 24]
   ├─ ─────────────────
-  ├─ Show Special Chars Bar    [✓]
-  ├─ Show Line Numbers         [✓]
-  ├─ Show Status Bar           [✓]
-  ├─ ─────────────────
-  ├─ Zoom In                   Ctrl++
-  ├─ Zoom Out                  Ctrl+-
-  └─ Reset Zoom                Ctrl+0
+  └─ Insert                    →
+      ├─ Date (MM/DD/YYYY)
+      ├─ Date (Month DD, YYYY)
+      ├─ Date (YYYY-MM-DD)
+      ├─ Time (HH:MM AM/PM)
+      ├─ Date & Time
+      ├─ ─────────────────
+      └─ Special Character...  F3
+```
 
-Security
-  ├─ Encrypt Document          →
-  │   ├─ Set Password
-  │   └─ Password Strength: [Indicator]
-  ├─ Change Password
-  ├─ Remove Encryption
-  └─ ─────────────────
-     Password Settings
-       ├─ Lock After Inactivity [✓] (5 min)
-       └─ Clear Clipboard After [✓] (30 sec)
-
+##### Tools Menu
+```
 Tools
-  ├─ Word Count
-  ├─ Character Count
-  ├─ Statistics
+  ├─ Statistics                Ctrl+I
   ├─ ─────────────────
   ├─ Sort Lines
   ├─ Remove Duplicates
+  ├─ ─────────────────
   ├─ Convert Case              →
   │   ├─ UPPERCASE
   │   ├─ lowercase
   │   └─ Title Case
-  └─ ─────────────────
-     Cleanup
-       ├─ Trim Whitespace
-       ├─ Remove Empty Lines
-       └─ Normalize Line Endings
+  ├─ ─────────────────
+  ├─ Trim Whitespace
+  └─ Remove Empty Lines
+```
 
-Settings
-  ├─ Auto-Save                 [✓]
-  │   └─ Interval: [5 minutes ▼]
-  ├─ Session Recovery          [✓]
+##### More Menu
+```
+More
+  ├─ Show/Hide Special Chars Bar
+  ├─ Toggle Status Bar
   ├─ ─────────────────
-  ├─ Default File Location     →
-  ├─ Google Drive              →
-  │   ├─ Connect Account
-  │   ├─ Disconnect
-  │   └─ Default Folder
-  ├─ ─────────────────
-  ├─ Editor Preferences        →
-  │   ├─ Tab Size: [4 ▼]
-  │   ├─ Word Wrap: [✓]
-  │   ├─ Auto-Indent: [✓]
-  │   └─ Show Invisibles: [ ]
-  ├─ ─────────────────
-  ├─ About
+  ├─ Settings
   └─ Help
+```
+
+**Dropdown Menu Features:**
+- Maximum height with scrolling on small devices
+- Responsive design adapts to screen size
+- Touch-friendly spacing on mobile
+- Submenus open to the right (desktop) or stack vertically (mobile)
+
+#### 5.2.2 Hamburger Menu (☰) - Left Sidebar
+
+```
+Recent Files
+  ├─ document1.txt
+  ├─ notes.txt             📱 (external file badge)
+  ├─ ideas.enc
+  ├─ todo.txt              ☁️ (Google Drive badge)
+  └─ [More recent files...]
+
+Features:
+- Displays last 10 recently opened files
+- Shows badges for external files (📱) and Drive files (☁️)
+- Click to reopen a file
+- Handles encrypted files with password prompt
+- Updates automatically when files are opened
 ```
 
 ### 5.3 Component Specifications
 
 #### 5.3.1 Toolbar (Header Bar 1)
 ```
-┌─────────────────────────────────────────┐
-│ [☰] SecureTextEditor   [🔒][🔍][⚙️][❓] │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│ [☰] [File▼] [Edit▼] [Tools▼] [More▼] SecureTextEditor │
+└──────────────────────────────────────────────────────┘
 
 Elements (left to right):
-- Hamburger menu (all primary functions)
-- App title
-- Lock icon (shows encryption status of active doc)
-- Search icon (quick access to find)
-- Settings icon
-- Help/About icon
+- Hamburger menu (☰) - Opens left sidebar with Recent Files
+- File dropdown - File operations, export, security
+- Edit dropdown - Edit operations, insert submenu
+- Tools dropdown - Text manipulation tools
+- More dropdown - View options, settings, help
+- App title (right-aligned on desktop)
+
+Features:
+- Dropdown menus with keyboard shortcuts displayed
+- Scrollable menus on small devices
+- Responsive layout adapts to screen size
+- Touch-friendly on mobile/tablet
 ```
 
 #### 5.3.2 Tab Bar (Header Bar 2)
