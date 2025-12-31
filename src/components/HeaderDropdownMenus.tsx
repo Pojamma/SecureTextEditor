@@ -1372,14 +1372,16 @@ export const HeaderDropdownMenus: React.FC = () => {
               : (pendingEncryptedData || pendingExternalFile ? 'decrypt' : 'encrypt')
           }
           onConfirm={
-            dialogMode === 'encrypt' || dialogMode === 'decrypt'
-              ? handleSecurityPasswordConfirm
+            saveAsToDeviceMode || saveAsMode
+              ? handleSavePassword
               : pendingExternalFile
               ? handleExternalDecryptPassword
               : pendingDriveFile
               ? handleDriveDecryptPassword
               : pendingEncryptedData
               ? handleDecryptPassword
+              : dialogMode === 'encrypt' || dialogMode === 'decrypt'
+              ? handleSecurityPasswordConfirm
               : handleSavePassword
           }
           onCancel={() => {

@@ -33,6 +33,7 @@ export const RecentFiles: React.FC = () => {
   const { closeAllMenus, showNotification } = useUIStore();
 
   // Load recent files from session
+  // Updates whenever documents change (open/close tabs)
   React.useEffect(() => {
     const session = SessionService.loadSession();
     if (session && session.documents.length > 0) {
@@ -47,8 +48,11 @@ export const RecentFiles: React.FC = () => {
         }))
         .slice(0, 10); // Show last 10 files
       setRecentFiles(files);
+    } else {
+      // No session or no documents - clear recent files
+      setRecentFiles([]);
     }
-  }, []);
+  }, [documents]); // Reload when documents change
 
   const handleOpenRecentFile = async (file: RecentFile) => {
     try {
