@@ -13,7 +13,9 @@ export interface SessionData {
 }
 
 const SESSION_STORAGE_KEY = 'securetexteditor_session';
-const SESSION_VERSION = '1.0.0';
+// Increment this version when making changes that break session compatibility
+// This will automatically clear old session data on app update
+const SESSION_VERSION = '1.1.0'; // Updated for menu reorganization and context menu features
 
 /**
  * Session Service for persisting and restoring application state
@@ -68,6 +70,14 @@ export class SessionService {
       // Validate session structure
       if (!session.version || !session.documents || !Array.isArray(session.documents)) {
         console.warn('Invalid session data structure');
+        this.clearSession();
+        return null;
+      }
+
+      // Check for version mismatch - clear session if app has been updated
+      if (session.version !== SESSION_VERSION) {
+        console.warn(`Session version mismatch (saved: ${session.version}, current: ${SESSION_VERSION}). Clearing old session data.`);
+        this.clearSession();
         return null;
       }
 
@@ -75,6 +85,8 @@ export class SessionService {
       return session;
     } catch (error) {
       console.error('Failed to load session:', error);
+      // Clear corrupted session data
+      this.clearSession();
       return null;
     }
   }
