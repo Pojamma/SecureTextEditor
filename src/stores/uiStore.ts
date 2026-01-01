@@ -83,6 +83,8 @@ interface UIState {
     selectAll?: () => void;
     find?: () => void;
     findAndReplace?: () => void;
+    getSelectedText?: () => string;
+    replaceSelectedText?: (text: string) => void;
   };
 
   // Actions

@@ -76,6 +76,8 @@ const App: React.FC = () => {
       selectAll: () => editorRef.current?.selectAll(),
       find: () => editorRef.current?.openSearch(),
       findAndReplace: () => editorRef.current?.openFindAndReplace(),
+      getSelectedText: () => editorRef.current?.getSelectedText() || '',
+      replaceSelectedText: (text: string) => editorRef.current?.replaceSelectedText(text),
     });
   }, [setEditorActions]);
 

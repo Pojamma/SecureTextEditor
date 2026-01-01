@@ -29,6 +29,8 @@ export interface CodeMirrorEditorHandle {
   paste: () => Promise<void>;
   selectAll: () => void;
   focus: () => void;
+  getSelectedText: () => string;
+  replaceSelectedText: (text: string) => void;
 }
 
 export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(({
@@ -158,6 +160,25 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     focus: () => {
       if (viewRef.current) {
         viewRef.current.focus();
+      }
+    },
+    getSelectedText: () => {
+      if (viewRef.current) {
+        const view = viewRef.current;
+        const selection = view.state.selection.main;
+        return view.state.doc.sliceString(selection.from, selection.to);
+      }
+      return '';
+    },
+    replaceSelectedText: (text: string) => {
+      if (viewRef.current) {
+        const view = viewRef.current;
+        const selection = view.state.selection.main;
+        view.dispatch({
+          changes: { from: selection.from, to: selection.to, insert: text },
+          selection: { anchor: selection.from, head: selection.from + text.length },
+        });
+        view.focus();
       }
     },
   }));

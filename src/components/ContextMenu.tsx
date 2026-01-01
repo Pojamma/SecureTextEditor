@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/stores/uiStore';
+import { convertToUpperCase, convertToLowerCase, convertToTitleCase } from '@/utils/textUtils';
 import './ContextMenu.css';
 
 interface ContextMenuProps {
@@ -10,7 +11,11 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const convertCaseSubmenuRef = useRef<HTMLDivElement>(null);
   const { editorActions, showNotification } = useUIStore();
+  const [showConvertCaseSubmenu, setShowConvertCaseSubmenu] = useState(false);
+  const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
+  const submenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -74,6 +79,60 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
     }
   };
 
+  const calculateSubmenuPosition = (triggerRef: React.RefObject<HTMLDivElement>) => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setSubmenuPosition({
+        top: rect.top,
+        left: rect.right - 2, // Slight overlap to prevent gap
+      });
+    }
+  };
+
+  const handleSubmenuMouseEnter = () => {
+    if (submenuTimeoutRef.current) {
+      clearTimeout(submenuTimeoutRef.current);
+      submenuTimeoutRef.current = null;
+    }
+    setShowConvertCaseSubmenu(true);
+    calculateSubmenuPosition(convertCaseSubmenuRef);
+  };
+
+  const handleSubmenuMouseLeave = () => {
+    submenuTimeoutRef.current = setTimeout(() => {
+      setShowConvertCaseSubmenu(false);
+    }, 150);
+  };
+
+  const handleConvertCase = (type: 'upper' | 'lower' | 'title') => {
+    if (!editorActions.getSelectedText || !editorActions.replaceSelectedText) {
+      showNotification('Convert case not available', 'warning');
+      onClose();
+      return;
+    }
+
+    const selectedText = editorActions.getSelectedText();
+
+    if (!selectedText) {
+      showNotification('No text selected', 'warning');
+      onClose();
+      return;
+    }
+
+    let converted = selectedText;
+    if (type === 'upper') {
+      converted = convertToUpperCase(selectedText);
+    } else if (type === 'lower') {
+      converted = convertToLowerCase(selectedText);
+    } else if (type === 'title') {
+      converted = convertToTitleCase(selectedText);
+    }
+
+    editorActions.replaceSelectedText(converted);
+    showNotification(`Converted to ${type} case`, 'success');
+    onClose();
+  };
+
   return (
     <div
       ref={menuRef}
@@ -124,6 +183,41 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose }) => {
         <span>Select All</span>
         <span className="context-menu-shortcut">Ctrl+A</span>
       </button>
+      <div className="context-menu-separator" />
+
+      {/* Convert Case Submenu */}
+      <div
+        ref={convertCaseSubmenuRef}
+        className="context-menu-item context-menu-item-submenu"
+        onMouseEnter={handleSubmenuMouseEnter}
+        onMouseLeave={handleSubmenuMouseLeave}
+      >
+        <span>Convert Case</span>
+        <span className="context-menu-arrow">▶</span>
+        {showConvertCaseSubmenu && (
+          <div
+            className="context-submenu-content"
+            style={{ top: submenuPosition.top, left: submenuPosition.left }}
+            onMouseEnter={() => {
+              if (submenuTimeoutRef.current) {
+                clearTimeout(submenuTimeoutRef.current);
+                submenuTimeoutRef.current = null;
+              }
+            }}
+            onMouseLeave={handleSubmenuMouseLeave}
+          >
+            <button className="context-menu-item" onClick={() => handleConvertCase('upper')}>
+              <span>UPPERCASE</span>
+            </button>
+            <button className="context-menu-item" onClick={() => handleConvertCase('lower')}>
+              <span>lowercase</span>
+            </button>
+            <button className="context-menu-item" onClick={() => handleConvertCase('title')}>
+              <span>Title Case</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
