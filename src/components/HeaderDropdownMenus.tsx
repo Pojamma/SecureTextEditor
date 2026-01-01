@@ -36,6 +36,7 @@ export const HeaderDropdownMenus: React.FC = () => {
   const [showInsertSubmenu, setShowInsertSubmenu] = useState(false);
   const [showConvertCaseSubmenu, setShowConvertCaseSubmenu] = useState(false);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
+  const submenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileButtonRef = useRef<HTMLButtonElement>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
@@ -130,9 +131,35 @@ export const HeaderDropdownMenus: React.FC = () => {
       const rect = triggerRef.current.getBoundingClientRect();
       setSubmenuPosition({
         top: rect.top,
-        left: rect.right + 4, // 4px gap to the right
+        left: rect.right - 2, // Slight overlap to prevent gap
       });
     }
+  };
+
+  const handleSubmenuMouseEnter = (submenu: 'insert' | 'convertCase', triggerRef: React.RefObject<HTMLDivElement>) => {
+    // Clear any pending timeout
+    if (submenuTimeoutRef.current) {
+      clearTimeout(submenuTimeoutRef.current);
+      submenuTimeoutRef.current = null;
+    }
+
+    if (submenu === 'insert') {
+      setShowInsertSubmenu(true);
+    } else {
+      setShowConvertCaseSubmenu(true);
+    }
+    calculateSubmenuPosition(triggerRef);
+  };
+
+  const handleSubmenuMouseLeave = (submenu: 'insert' | 'convertCase') => {
+    // Delay hiding to allow mouse to move to submenu
+    submenuTimeoutRef.current = setTimeout(() => {
+      if (submenu === 'insert') {
+        setShowInsertSubmenu(false);
+      } else {
+        setShowConvertCaseSubmenu(false);
+      }
+    }, 150); // 150ms delay
   };
 
   const handleAction = (action: (() => void) | undefined, actionName: string) => {
@@ -1209,11 +1236,8 @@ export const HeaderDropdownMenus: React.FC = () => {
               <div
                 ref={insertSubmenuRef}
                 className="dropdown-menu-item dropdown-menu-item-submenu"
-                onMouseEnter={() => {
-                  setShowInsertSubmenu(true);
-                  calculateSubmenuPosition(insertSubmenuRef);
-                }}
-                onMouseLeave={() => setShowInsertSubmenu(false)}
+                onMouseEnter={() => handleSubmenuMouseEnter('insert', insertSubmenuRef)}
+                onMouseLeave={() => handleSubmenuMouseLeave('insert')}
               >
                 <span>Insert</span>
                 <span className="dropdown-menu-arrow">▶</span>
@@ -1221,6 +1245,13 @@ export const HeaderDropdownMenus: React.FC = () => {
                   <div
                     className="dropdown-submenu-content"
                     style={{ top: submenuPosition.top, left: submenuPosition.left }}
+                    onMouseEnter={() => {
+                      if (submenuTimeoutRef.current) {
+                        clearTimeout(submenuTimeoutRef.current);
+                        submenuTimeoutRef.current = null;
+                      }
+                    }}
+                    onMouseLeave={() => handleSubmenuMouseLeave('insert')}
                   >
                     <div className="dropdown-submenu-header">Date and Time</div>
                     <button className="dropdown-menu-item" onClick={() => handleInsertDate('short')}>
@@ -1290,11 +1321,8 @@ export const HeaderDropdownMenus: React.FC = () => {
               <div
                 ref={convertCaseSubmenuRef}
                 className="dropdown-menu-item dropdown-menu-item-submenu"
-                onMouseEnter={() => {
-                  setShowConvertCaseSubmenu(true);
-                  calculateSubmenuPosition(convertCaseSubmenuRef);
-                }}
-                onMouseLeave={() => setShowConvertCaseSubmenu(false)}
+                onMouseEnter={() => handleSubmenuMouseEnter('convertCase', convertCaseSubmenuRef)}
+                onMouseLeave={() => handleSubmenuMouseLeave('convertCase')}
               >
                 <span>Convert Case</span>
                 <span className="dropdown-menu-arrow">▶</span>
@@ -1302,6 +1330,13 @@ export const HeaderDropdownMenus: React.FC = () => {
                   <div
                     className="dropdown-submenu-content"
                     style={{ top: submenuPosition.top, left: submenuPosition.left }}
+                    onMouseEnter={() => {
+                      if (submenuTimeoutRef.current) {
+                        clearTimeout(submenuTimeoutRef.current);
+                        submenuTimeoutRef.current = null;
+                      }
+                    }}
+                    onMouseLeave={() => handleSubmenuMouseLeave('convertCase')}
                   >
                     <button className="dropdown-menu-item" onClick={() => handleConvertCase('upper')}>
                       <span>UPPERCASE</span>
