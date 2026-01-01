@@ -77,6 +77,12 @@ app.on('activate', async function () {
 import { ipcMain, dialog } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { app as electronApp } from 'electron';
+
+// Get user's Documents directory
+function getDocumentsPath(): string {
+  return electronApp.getPath('documents');
+}
 
 // File picker for opening external files with write access
 ipcMain.handle('file:pick-external', async () => {
@@ -177,5 +183,69 @@ ipcMain.handle('file:create-external', async (_event, filename: string, content:
     };
   } catch (error) {
     throw new Error(`Failed to create file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// Local file operations (Documents directory)
+// Read file from Documents directory
+ipcMain.handle('file:read-local', async (_event, filename: string) => {
+  try {
+    const filePath = path.join(getDocumentsPath(), filename);
+    const content = await fs.readFile(filePath, 'utf-8');
+    console.log('[Electron] Read local file:', filename);
+    return { content };
+  } catch (error) {
+    throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// Write file to Documents directory
+ipcMain.handle('file:write-local', async (_event, filename: string, content: string) => {
+  try {
+    const filePath = path.join(getDocumentsPath(), filename);
+    // Ensure directory exists
+    const dir = path.dirname(filePath);
+    await fs.mkdir(dir, { recursive: true });
+
+    await fs.writeFile(filePath, content, 'utf-8');
+    console.log('[Electron] Wrote local file:', filename);
+    return { success: true, path: filePath };
+  } catch (error) {
+    throw new Error(`Failed to write file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// List files in Documents directory
+ipcMain.handle('file:list-local', async () => {
+  try {
+    const documentsPath = getDocumentsPath();
+    const files = await fs.readdir(documentsPath);
+    console.log('[Electron] Listed files, count:', files.length);
+    return { files };
+  } catch (error) {
+    throw new Error(`Failed to list files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+});
+
+// Check if file exists
+ipcMain.handle('file:exists-local', async (_event, filename: string) => {
+  try {
+    const filePath = path.join(getDocumentsPath(), filename);
+    await fs.access(filePath);
+    return { exists: true };
+  } catch {
+    return { exists: false };
+  }
+});
+
+// Delete file from Documents directory
+ipcMain.handle('file:delete-local', async (_event, filename: string) => {
+  try {
+    const filePath = path.join(getDocumentsPath(), filename);
+    await fs.unlink(filePath);
+    console.log('[Electron] Deleted local file:', filename);
+    return { success: true };
+  } catch (error) {
+    throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });

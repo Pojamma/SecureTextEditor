@@ -8,10 +8,25 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 
+// TypeScript type for Electron API
+declare global {
+  interface Window {
+    electronAPI?: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+    };
+  }
+}
+
+// Check if running on Electron
+const isElectron = () => {
+  return Capacitor.getPlatform() === 'electron' && window.electronAPI;
+};
+
 // Use app data directory on mobile (no permissions needed), Documents on web/electron
 const getDirectory = () => {
   const platform = Capacitor.getPlatform();
-  // On web or electron, use Documents directory  // On mobile (android/ios), use app's private data directory (no permissions needed)
+  // On web or electron, use Documents directory
+  // On mobile (android/ios), use app's private data directory (no permissions needed)
   return platform === 'web' || platform === 'electron' ? Directory.Documents : Directory.Data;
 };
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
@@ -57,20 +72,28 @@ export async function readFile(
   path: string
 ): Promise<{ document: OpenDocument; requiresPassword: boolean; encryptedData?: EncryptedDocument }> {
   try {
-    // Check permissions first
-    const hasPermission = await checkPermissions();
-    if (!hasPermission) {
-      throw new Error('Storage permission denied. Please grant storage access in settings.');
+    // Check permissions first (only for mobile)
+    if (!isElectron()) {
+      const hasPermission = await checkPermissions();
+      if (!hasPermission) {
+        throw new Error('Storage permission denied. Please grant storage access in settings.');
+      }
     }
 
     // Read file content
-    const result = await Filesystem.readFile({
-      path: path,
-      directory: getDirectory(),
-      encoding: Encoding.UTF8,
-    });
-
-    const content = result.data as string;
+    let content: string;
+    if (isElectron()) {
+      console.log('[FS] Using Electron IPC for file read:', path);
+      const result = await window.electronAPI!.invoke('file:read-local', path);
+      content = result.content;
+    } else {
+      const result = await Filesystem.readFile({
+        path: path,
+        directory: getDirectory(),
+        encoding: Encoding.UTF8,
+      });
+      content = result.data as string;
+    }
 
     // Try to parse as JSON (could be encrypted)
     let parsedData;
@@ -259,16 +282,22 @@ export async function saveFile(
       console.log('[FS] Saving plain document, content length:', content.length);
     }
 
-    const writeResult = await Filesystem.writeFile({
-      path: path,
-      data: content,
-      directory: directory,
-      encoding: Encoding.UTF8,
-      recursive: true, // Create parent directories if needed
-    });
-
-    console.log('[FS] File write result:', writeResult);
-    console.log('[FS] File saved successfully to:', path);
+    // Use Electron IPC if available, otherwise use Capacitor Filesystem
+    if (isElectron()) {
+      console.log('[FS] Using Electron IPC for file write');
+      await window.electronAPI!.invoke('file:write-local', path, content);
+      console.log('[FS] File saved successfully via Electron IPC to:', path);
+    } else {
+      const writeResult = await Filesystem.writeFile({
+        path: path,
+        data: content,
+        directory: directory,
+        encoding: Encoding.UTF8,
+        recursive: true, // Create parent directories if needed
+      });
+      console.log('[FS] File write result:', writeResult);
+      console.log('[FS] File saved successfully to:', path);
+    }
 
     // Add to recent files after successful save
     RecentFilesService.addRecentFile({
@@ -356,11 +385,16 @@ export async function saveFileAs(
  */
 export async function fileExists(path: string): Promise<boolean> {
   try {
-    await Filesystem.stat({
-      path: path,
-      directory: getDirectory(),
-    });
-    return true;
+    if (isElectron()) {
+      const result = await window.electronAPI!.invoke('file:exists-local', path);
+      return result.exists;
+    } else {
+      await Filesystem.stat({
+        path: path,
+        directory: getDirectory(),
+      });
+      return true;
+    }
   } catch {
     return false;
   }
@@ -371,14 +405,19 @@ export async function fileExists(path: string): Promise<boolean> {
  */
 export async function listFiles(): Promise<string[]> {
   try {
-    const result = await Filesystem.readdir({
-      path: '',
-      directory: getDirectory(),
-    });
+    if (isElectron()) {
+      const result = await window.electronAPI!.invoke('file:list-local');
+      return result.files.filter((file: string) => !file.startsWith('.'));
+    } else {
+      const result = await Filesystem.readdir({
+        path: '',
+        directory: getDirectory(),
+      });
 
-    return result.files
-      .filter((file) => !file.name.startsWith('.'))
-      .map((file) => file.name);
+      return result.files
+        .filter((file) => !file.name.startsWith('.'))
+        .map((file) => file.name);
+    }
   } catch (error) {
     console.error('Error listing files:', error);
     return [];
@@ -390,10 +429,14 @@ export async function listFiles(): Promise<string[]> {
  */
 export async function deleteFile(path: string): Promise<void> {
   try {
-    await Filesystem.deleteFile({
-      path: path,
-      directory: getDirectory(),
-    });
+    if (isElectron()) {
+      await window.electronAPI!.invoke('file:delete-local', path);
+    } else {
+      await Filesystem.deleteFile({
+        path: path,
+        directory: getDirectory(),
+      });
+    }
   } catch (error) {
     console.error('Error deleting file:', error);
     throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
