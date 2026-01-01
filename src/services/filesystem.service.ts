@@ -8,12 +8,11 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 
-// Use app data directory on mobile (no permissions needed), Documents on web
+// Use app data directory on mobile (no permissions needed), Documents on web/electron
 const getDirectory = () => {
   const platform = Capacitor.getPlatform();
-  // On mobile, use app's private data directory (no permissions needed)
-  // On web, use Documents
-  return platform === 'web' ? Directory.Documents : Directory.Data;
+  // On web or electron, use Documents directory  // On mobile (android/ios), use app's private data directory (no permissions needed)
+  return platform === 'web' || platform === 'electron' ? Directory.Documents : Directory.Data;
 };
 import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document.types';
 import { encryptDocument, decryptDocument, isEncrypted, encryptToBinary, decryptFromBinary, isBinaryEncrypted } from './encryption.service';
@@ -220,9 +219,20 @@ export async function saveFile(
 
     let content: string;
     const path = document.path || `${document.metadata.filename}`;
+    const platform = Capacitor.getPlatform();
+    const directory = getDirectory();
+
+    console.log('[FS] Saving file:', {
+      path,
+      platform,
+      directory,
+      encrypted: document.encrypted,
+      hasPassword: !!password,
+    });
 
     if (document.encrypted && password) {
       // Encrypt and save
+      console.log('[FS] Encrypting document before save');
       const plainDoc: PlainDocument = {
         content: document.content,
         metadata: {
@@ -233,6 +243,7 @@ export async function saveFile(
 
       const encryptedDoc = await encryptDocument(plainDoc, password);
       content = JSON.stringify(encryptedDoc, null, 2);
+      console.log('[FS] Document encrypted, content length:', content.length);
     } else if (document.encrypted && !password) {
       throw new Error('Password required to save encrypted document');
     } else {
@@ -245,15 +256,19 @@ export async function saveFile(
         },
       };
       content = JSON.stringify(plainDoc, null, 2);
+      console.log('[FS] Saving plain document, content length:', content.length);
     }
 
-    await Filesystem.writeFile({
+    const writeResult = await Filesystem.writeFile({
       path: path,
       data: content,
-      directory: getDirectory(),
+      directory: directory,
       encoding: Encoding.UTF8,
       recursive: true, // Create parent directories if needed
     });
+
+    console.log('[FS] File write result:', writeResult);
+    console.log('[FS] File saved successfully to:', path);
 
     // Add to recent files after successful save
     RecentFilesService.addRecentFile({
@@ -262,7 +277,7 @@ export async function saveFile(
       source: 'local',
     });
   } catch (error) {
-    console.error('Error saving file:', error);
+    console.error('[FS] Error saving file:', error);
     throw new Error(`Failed to save file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
