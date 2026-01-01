@@ -16,7 +16,7 @@ import {
   signOut,
   downloadFile
 } from '@/services/googleDrive.service';
-import { isEncrypted, decryptDocument, encryptDocument, decryptFromBinary, isBinaryEncrypted } from '@/services/encryption.service';
+import { isEncrypted, decryptDocument, decryptFromBinary, isBinaryEncrypted } from '@/services/encryption.service';
 import {
   sortLines,
   removeDuplicateLines,
@@ -1029,15 +1029,11 @@ export const HeaderDropdownMenus: React.FC = () => {
 
     try {
       if (dialogMode === 'encrypt') {
-        const plainDoc: PlainDocument = {
-          content: activeDoc.content,
-          metadata: activeDoc.metadata,
-        };
-
-        await encryptDocument(plainDoc, password);
-
+        // Just mark the document as encrypted - actual encryption happens when saving
+        // This keeps the content editable in memory as plain text
         updateDocument(activeDocumentId, {
           encrypted: true,
+          modified: true, // Mark as modified so user knows to save
           metadata: {
             ...activeDoc.metadata,
             encrypted: true,
@@ -1045,7 +1041,7 @@ export const HeaderDropdownMenus: React.FC = () => {
           },
         });
 
-        showNotification('Document encrypted successfully!', 'success');
+        showNotification('Document marked for encryption. Save to encrypt.', 'success');
         closeMenu();
       } else if (dialogMode === 'decrypt') {
         const decryptedContent = await decryptFromBinary(activeDoc.content, password);
