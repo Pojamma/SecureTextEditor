@@ -36,6 +36,7 @@ export const HeaderDropdownMenus: React.FC = () => {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showInsertSubmenu, setShowInsertSubmenu] = useState(false);
   const [showConvertCaseSubmenu, setShowConvertCaseSubmenu] = useState(false);
+  const [showRecentFilesSubmenu, setShowRecentFilesSubmenu] = useState(false);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
   const submenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,7 @@ export const HeaderDropdownMenus: React.FC = () => {
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const insertSubmenuRef = useRef<HTMLDivElement>(null);
   const convertCaseSubmenuRef = useRef<HTMLDivElement>(null);
+  const recentFilesSubmenuRef = useRef<HTMLDivElement>(null);
 
   // File menu state
   const [showFilePicker, setShowFilePicker] = useState(false);
@@ -110,6 +112,7 @@ export const HeaderDropdownMenus: React.FC = () => {
         setOpenMenu(null);
         setShowInsertSubmenu(false);
         setShowConvertCaseSubmenu(false);
+        setShowRecentFilesSubmenu(false);
       }
     };
 
@@ -124,6 +127,7 @@ export const HeaderDropdownMenus: React.FC = () => {
       setOpenMenu(null);
       setShowInsertSubmenu(false);
       setShowConvertCaseSubmenu(false);
+      setShowRecentFilesSubmenu(false);
     } else {
       // Calculate position based on button location
       if (buttonRef.current) {
@@ -136,6 +140,7 @@ export const HeaderDropdownMenus: React.FC = () => {
       setOpenMenu(menu);
       setShowInsertSubmenu(false);
       setShowConvertCaseSubmenu(false);
+      setShowRecentFilesSubmenu(false);
     }
   };
 
@@ -143,6 +148,7 @@ export const HeaderDropdownMenus: React.FC = () => {
     setOpenMenu(null);
     setShowInsertSubmenu(false);
     setShowConvertCaseSubmenu(false);
+    setShowRecentFilesSubmenu(false);
   };
 
   const calculateSubmenuPosition = (triggerRef: React.RefObject<HTMLDivElement>) => {
@@ -155,7 +161,7 @@ export const HeaderDropdownMenus: React.FC = () => {
     }
   };
 
-  const handleSubmenuMouseEnter = (submenu: 'insert' | 'convertCase', triggerRef: React.RefObject<HTMLDivElement>) => {
+  const handleSubmenuMouseEnter = (submenu: 'insert' | 'convertCase' | 'recentFiles', triggerRef: React.RefObject<HTMLDivElement>) => {
     // Clear any pending timeout
     if (submenuTimeoutRef.current) {
       clearTimeout(submenuTimeoutRef.current);
@@ -164,19 +170,23 @@ export const HeaderDropdownMenus: React.FC = () => {
 
     if (submenu === 'insert') {
       setShowInsertSubmenu(true);
-    } else {
+    } else if (submenu === 'convertCase') {
       setShowConvertCaseSubmenu(true);
+    } else if (submenu === 'recentFiles') {
+      setShowRecentFilesSubmenu(true);
     }
     calculateSubmenuPosition(triggerRef);
   };
 
-  const handleSubmenuMouseLeave = (submenu: 'insert' | 'convertCase') => {
+  const handleSubmenuMouseLeave = (submenu: 'insert' | 'convertCase' | 'recentFiles') => {
     // Delay hiding to allow mouse to move to submenu
     submenuTimeoutRef.current = setTimeout(() => {
       if (submenu === 'insert') {
         setShowInsertSubmenu(false);
-      } else {
+      } else if (submenu === 'convertCase') {
         setShowConvertCaseSubmenu(false);
+      } else if (submenu === 'recentFiles') {
+        setShowRecentFilesSubmenu(false);
       }
     }, 150); // 150ms delay
   };
@@ -1226,37 +1236,59 @@ export const HeaderDropdownMenus: React.FC = () => {
                 <span className="dropdown-menu-shortcut">Ctrl+Shift+O</span>
               </button>
 
-              {/* Recent Files Section */}
               <div className="dropdown-menu-separator" />
-              <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Recent Files
-              </div>
-              {recentFiles.length === 0 ? (
-                <div style={{ padding: '0.6rem 1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
-                  No recent files - open some files to see them here
-                </div>
-              ) : (
-                <>
-                  {recentFiles.map((file, index) => (
-                    <button
-                      key={`${file.path}-${index}`}
-                      className="dropdown-menu-item"
-                      onClick={() => handleOpenRecentFile(file)}
-                    >
-                      <span>{file.filename}</span>
-                      {file.source === 'external' && <span style={{ marginLeft: '0.5rem' }}>📱</span>}
-                      {file.source === 'drive' && <span style={{ marginLeft: '0.5rem' }}>☁️</span>}
-                    </button>
-                  ))}
-                  <button
-                    className="dropdown-menu-item"
-                    onClick={handleClearRecentFiles}
-                    style={{ color: 'var(--color-error)', fontSize: '0.9em' }}
+
+              {/* Recent Files Submenu */}
+              <div
+                ref={recentFilesSubmenuRef}
+                className="dropdown-menu-item dropdown-menu-item-submenu"
+                onMouseEnter={() => handleSubmenuMouseEnter('recentFiles', recentFilesSubmenuRef)}
+                onMouseLeave={() => handleSubmenuMouseLeave('recentFiles')}
+              >
+                <span>Recent Files</span>
+                <span className="dropdown-menu-arrow">▶</span>
+                {showRecentFilesSubmenu && (
+                  <div
+                    className="dropdown-submenu-content"
+                    style={{ top: submenuPosition.top, left: submenuPosition.left }}
+                    onMouseEnter={() => {
+                      if (submenuTimeoutRef.current) {
+                        clearTimeout(submenuTimeoutRef.current);
+                        submenuTimeoutRef.current = null;
+                      }
+                    }}
+                    onMouseLeave={() => handleSubmenuMouseLeave('recentFiles')}
                   >
-                    Clear Recent Files
-                  </button>
-                </>
-              )}
+                    {recentFiles.length === 0 ? (
+                      <div style={{ padding: '0.6rem 1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                        No recent files yet
+                      </div>
+                    ) : (
+                      <>
+                        {recentFiles.map((file, index) => (
+                          <button
+                            key={`${file.path}-${index}`}
+                            className="dropdown-menu-item"
+                            onClick={() => handleOpenRecentFile(file)}
+                          >
+                            <span>{file.filename}</span>
+                            {file.source === 'external' && <span style={{ marginLeft: '0.5rem' }}>📱</span>}
+                            {file.source === 'drive' && <span style={{ marginLeft: '0.5rem' }}>☁️</span>}
+                          </button>
+                        ))}
+                        <div className="dropdown-menu-separator" />
+                        <button
+                          className="dropdown-menu-item"
+                          onClick={handleClearRecentFiles}
+                          style={{ color: 'var(--color-error)', fontSize: '0.9em' }}
+                        >
+                          Clear Recent Files
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <div className="dropdown-menu-separator" />
 
