@@ -24,11 +24,11 @@
 }
 
 .dropdown-menu-button:hover {
-  background: var(--color-hover);
+  background: var(--color-secondary);
 }
 
 .dropdown-menu-button.active {
-  background: var(--color-hover);
+  background: var(--color-secondary);
 }
 
 .dropdown-menu-content {
@@ -73,7 +73,7 @@
 }
 
 .dropdown-menu-item:hover {
-  background: var(--color-hover);
+  background: var(--color-secondary);
 }
 
 .dropdown-menu-shortcut {
@@ -124,12 +124,13 @@
 }
 
 /* Ensure submenu items have hover effect */
-.dropdown-submenu-content .dropdown-menu-item {
+.dropdown-submenu-content button.dropdown-menu-item {
   transition: background 0.2s;
+  background: transparent;
 }
 
-.dropdown-submenu-content .dropdown-menu-item:hover {
-  background: var(--color-hover);
+.dropdown-submenu-content button.dropdown-menu-item:hover {
+  background: var(--color-secondary) !important;
 }
 
 /* Mobile Responsive */
