@@ -79,7 +79,12 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { app as electronApp } from 'electron';
 
-// Get user's Documents directory
+// Get app's local storage directory (for internal app storage)
+function getLocalStoragePath(): string {
+  return electronApp.getPath('userData');
+}
+
+// Get user's Documents directory (for external "Save As to Device")
 function getDocumentsPath(): string {
   return electronApp.getPath('documents');
 }
@@ -186,51 +191,54 @@ ipcMain.handle('file:create-external', async (_event, filename: string, content:
   }
 });
 
-// Local file operations (Documents directory)
-// Read file from Documents directory
+// Local file operations (App's private storage - userData directory)
+// Read file from local storage
 ipcMain.handle('file:read-local', async (_event, filename: string) => {
   try {
-    const filePath = path.join(getDocumentsPath(), filename);
+    const filePath = path.join(getLocalStoragePath(), filename);
     const content = await fs.readFile(filePath, 'utf-8');
-    console.log('[Electron] Read local file:', filename);
+    console.log('[Electron] Read local file from userData:', filename);
     return { content };
   } catch (error) {
     throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });
 
-// Write file to Documents directory
+// Write file to local storage
 ipcMain.handle('file:write-local', async (_event, filename: string, content: string) => {
   try {
-    const filePath = path.join(getDocumentsPath(), filename);
+    const filePath = path.join(getLocalStoragePath(), filename);
     // Ensure directory exists
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
 
     await fs.writeFile(filePath, content, 'utf-8');
-    console.log('[Electron] Wrote local file:', filename);
+    console.log('[Electron] Wrote local file to userData:', filename);
+    console.log('[Electron] Full path:', filePath);
     return { success: true, path: filePath };
   } catch (error) {
     throw new Error(`Failed to write file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });
 
-// List files in Documents directory
+// List files in local storage
 ipcMain.handle('file:list-local', async () => {
   try {
-    const documentsPath = getDocumentsPath();
-    const files = await fs.readdir(documentsPath);
-    console.log('[Electron] Listed files, count:', files.length);
+    const localPath = getLocalStoragePath();
+    // Ensure directory exists
+    await fs.mkdir(localPath, { recursive: true });
+    const files = await fs.readdir(localPath);
+    console.log('[Electron] Listed local files from userData, count:', files.length);
     return { files };
   } catch (error) {
     throw new Error(`Failed to list files: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 });
 
-// Check if file exists
+// Check if file exists in local storage
 ipcMain.handle('file:exists-local', async (_event, filename: string) => {
   try {
-    const filePath = path.join(getDocumentsPath(), filename);
+    const filePath = path.join(getLocalStoragePath(), filename);
     await fs.access(filePath);
     return { exists: true };
   } catch {
@@ -238,12 +246,12 @@ ipcMain.handle('file:exists-local', async (_event, filename: string) => {
   }
 });
 
-// Delete file from Documents directory
+// Delete file from local storage
 ipcMain.handle('file:delete-local', async (_event, filename: string) => {
   try {
-    const filePath = path.join(getDocumentsPath(), filename);
+    const filePath = path.join(getLocalStoragePath(), filename);
     await fs.unlink(filePath);
-    console.log('[Electron] Deleted local file:', filename);
+    console.log('[Electron] Deleted local file from userData:', filename);
     return { success: true };
   } catch (error) {
     throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
