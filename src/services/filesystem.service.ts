@@ -19,6 +19,7 @@ import { EncryptedDocument, PlainDocument, OpenDocument } from '@/types/document
 import { encryptDocument, decryptDocument, isEncrypted, encryptToBinary, decryptFromBinary, isBinaryEncrypted } from './encryption.service';
 import { generateId, formatDate } from '@/utils/helpers';
 import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri, saveAsToExternalDevice } from './externalFilesystem.service';
+import { RecentFilesService } from './recentFiles.service';
 
 // Re-export for convenience
 export { checkExternalUri as checkExternalFileAccess };
@@ -107,38 +108,56 @@ export async function readFile(
     } else if (parsedData && 'content' in parsedData && 'metadata' in parsedData) {
       // Plain document saved as JSON
       const plainDoc = parsedData as PlainDocument;
+      const document = {
+        id: generateId(),
+        path: path,
+        source: 'local' as const,
+        encrypted: false,
+        content: plainDoc.content,
+        modified: false,
+        cursorPosition: 0,
+        scrollPosition: 0,
+        metadata: plainDoc.metadata,
+      };
+
+      // Add to recent files
+      RecentFilesService.addRecentFile({
+        filename: plainDoc.metadata.filename,
+        path: path,
+        source: 'local',
+      });
+
       return {
-        document: {
-          id: generateId(),
-          path: path,
-          source: 'local',
-          encrypted: false,
-          content: plainDoc.content,
-          modified: false,
-          cursorPosition: 0,
-          scrollPosition: 0,
-          metadata: plainDoc.metadata,
-        },
+        document,
         requiresPassword: false,
       };
     } else {
       // Plain text file
-      return {
-        document: {
-          id: generateId(),
-          path: path,
-          source: 'local',
-          encrypted: false,
-          content: content,
-          modified: false,
-          cursorPosition: 0,
-          scrollPosition: 0,
-          metadata: {
-            filename: getFilenameFromPath(path),
-            created: formatDate(),
-            modified: formatDate(),
-          },
+      const document = {
+        id: generateId(),
+        path: path,
+        source: 'local' as const,
+        encrypted: false,
+        content: content,
+        modified: false,
+        cursorPosition: 0,
+        scrollPosition: 0,
+        metadata: {
+          filename: getFilenameFromPath(path),
+          created: formatDate(),
+          modified: formatDate(),
         },
+      };
+
+      // Add to recent files
+      RecentFilesService.addRecentFile({
+        filename: document.metadata.filename,
+        path: path,
+        source: 'local',
+      });
+
+      return {
+        document,
         requiresPassword: false,
       };
     }
@@ -159,10 +178,10 @@ export async function decryptFile(
   try {
     const plainDoc = await decryptDocument(encryptedData, password);
 
-    return {
+    const document = {
       id: generateId(),
       path: path,
-      source: 'local',
+      source: 'local' as const,
       encrypted: true,
       content: plainDoc.content,
       modified: false,
@@ -170,6 +189,15 @@ export async function decryptFile(
       scrollPosition: 0,
       metadata: plainDoc.metadata,
     };
+
+    // Add to recent files after successful decryption
+    RecentFilesService.addRecentFile({
+      filename: plainDoc.metadata.filename,
+      path: path,
+      source: 'local',
+    });
+
+    return document;
   } catch (error) {
     console.error('Decryption error:', error);
     throw new Error('Failed to decrypt file. Wrong password or corrupted file.');
@@ -225,6 +253,13 @@ export async function saveFile(
       directory: getDirectory(),
       encoding: Encoding.UTF8,
       recursive: true, // Create parent directories if needed
+    });
+
+    // Add to recent files after successful save
+    RecentFilesService.addRecentFile({
+      filename: document.metadata.filename,
+      path: path,
+      source: 'local',
     });
   } catch (error) {
     console.error('Error saving file:', error);
@@ -285,6 +320,13 @@ export async function saveFileAs(
       directory: getDirectory(),
       encoding: Encoding.UTF8,
       recursive: true, // Create parent directories if needed
+    });
+
+    // Add to recent files after successful save
+    RecentFilesService.addRecentFile({
+      filename: newFilename,
+      path: newPath,
+      source: 'local',
     });
 
     return newPath;
@@ -579,40 +621,60 @@ export async function readExternalFile(): Promise<{
     } else if (parsedData && 'content' in parsedData && 'metadata' in parsedData) {
       // Plain document in JSON format
       const plainDoc = parsedData as PlainDocument;
+      const document = {
+        id: generateId(),
+        path: fileData.filename,
+        source: 'external' as const,
+        encrypted: false,
+        content: plainDoc.content,
+        modified: false,
+        cursorPosition: 0,
+        scrollPosition: 0,
+        externalUri: fileData.uri,
+        metadata: plainDoc.metadata,
+      };
+
+      // Add to recent files
+      RecentFilesService.addRecentFile({
+        filename: fileData.filename,
+        path: fileData.filename,
+        source: 'external',
+        externalUri: fileData.uri,
+      });
+
       return {
-        document: {
-          id: generateId(),
-          path: fileData.filename,
-          source: 'external',
-          encrypted: false,
-          content: plainDoc.content,
-          modified: false,
-          cursorPosition: 0,
-          scrollPosition: 0,
-          externalUri: fileData.uri,
-          metadata: plainDoc.metadata,
-        },
+        document,
         requiresPassword: false,
       };
     } else {
       // Plain text file
-      return {
-        document: {
-          id: generateId(),
-          path: fileData.filename,
-          source: 'external',
-          encrypted: false,
-          content: fileData.content,
-          modified: false,
-          cursorPosition: 0,
-          scrollPosition: 0,
-          externalUri: fileData.uri,
-          metadata: {
-            filename: fileData.filename,
-            created: formatDate(),
-            modified: formatDate(),
-          },
+      const document = {
+        id: generateId(),
+        path: fileData.filename,
+        source: 'external' as const,
+        encrypted: false,
+        content: fileData.content,
+        modified: false,
+        cursorPosition: 0,
+        scrollPosition: 0,
+        externalUri: fileData.uri,
+        metadata: {
+          filename: fileData.filename,
+          created: formatDate(),
+          modified: formatDate(),
         },
+      };
+
+      // Add to recent files
+      RecentFilesService.addRecentFile({
+        filename: fileData.filename,
+        path: fileData.filename,
+        source: 'external',
+        externalUri: fileData.uri,
+      });
+
+      return {
+        document,
         requiresPassword: false,
       };
     }
@@ -649,10 +711,10 @@ export async function decryptExternalFile(
       content = plainDoc.content;
     }
 
-    return {
+    const document = {
       id: generateId(),
       path: filename,
-      source: 'external',
+      source: 'external' as const,
       encrypted: true,
       content: content,
       modified: false,
@@ -666,6 +728,16 @@ export async function decryptExternalFile(
         encrypted: true,
       },
     };
+
+    // Add to recent files after successful decryption
+    RecentFilesService.addRecentFile({
+      filename: filename,
+      path: filename,
+      source: 'external',
+      externalUri: uri,
+    });
+
+    return document;
   } catch (error) {
     console.error('Decryption error:', error);
     throw new Error('Failed to decrypt file. Wrong password or corrupted file.');
@@ -728,10 +800,28 @@ export async function saveExternalFile(document: OpenDocument, password?: string
     if (needsRename) {
       // Rename the file by creating new and deleting old
       const newUri = await renameExternalFile(document.externalUri, newFilename, content, isBinary);
+
+      // Update recent files with new filename
+      RecentFilesService.addRecentFile({
+        filename: newFilename,
+        path: newFilename,
+        source: 'external',
+        externalUri: newUri,
+      });
+
       return { newUri, newFilename };
     } else {
       // Write back to the same URI
       await saveToExternalUri(document.externalUri, content, isBinary);
+
+      // Add/update in recent files
+      RecentFilesService.addRecentFile({
+        filename: document.metadata.filename,
+        path: document.metadata.filename,
+        source: 'external',
+        externalUri: document.externalUri,
+      });
+
       return {};
     }
   } catch (error) {

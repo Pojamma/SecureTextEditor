@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import { useDocumentStore } from '@/stores/documentStore';
 import { useUIStore } from '@/stores/uiStore';
-import { SessionService } from '@/services/session.service';
+import { RecentFilesService, RecentFileEntry } from '@/services/recentFiles.service';
 import { readFile, decryptFile, readExternalFile, decryptExternalFile, checkExternalFileAccess } from '@/services/filesystem.service';
 import { EncryptedDocument } from '@/types/document.types';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
 import './Menu.css';
 
-interface RecentFile {
-  filename: string;
-  path: string;
-  source: 'local' | 'drive' | 'external' | 'temp';
-  externalUri?: string;
-  modified?: string;
-}
-
 export const RecentFiles: React.FC = () => {
   const [expanded, setExpanded] = useState(true);
-  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [pendingEncryptedData, setPendingEncryptedData] = useState<{
     data: EncryptedDocument;
@@ -32,29 +24,19 @@ export const RecentFiles: React.FC = () => {
   const { addDocument, setActiveDocument, documents } = useDocumentStore();
   const { closeAllMenus, showNotification } = useUIStore();
 
-  // Load recent files from session
-  // Updates whenever documents change (open/close tabs)
-  React.useEffect(() => {
-    const session = SessionService.loadSession();
-    if (session && session.documents.length > 0) {
-      const files: RecentFile[] = session.documents
-        .filter(doc => doc.path) // Only files that have been saved
-        .map(doc => ({
-          filename: doc.metadata.filename,
-          path: doc.path,
-          source: doc.source,
-          externalUri: doc.externalUri,
-          modified: doc.metadata.modified,
-        }))
-        .slice(0, 10); // Show last 10 files
-      setRecentFiles(files);
-    } else {
-      // No session or no documents - clear recent files
-      setRecentFiles([]);
-    }
-  }, [documents]); // Reload when documents change
+  // Load recent files from persistent storage
+  // Uses separate storage from open documents, so files remain after closing tabs
+  const loadRecentFiles = React.useCallback(() => {
+    const files = RecentFilesService.getRecentFiles();
+    setRecentFiles(files);
+  }, []);
 
-  const handleOpenRecentFile = async (file: RecentFile) => {
+  // Load on mount and when documents change (to refresh if new files opened)
+  React.useEffect(() => {
+    loadRecentFiles();
+  }, [documents, loadRecentFiles]);
+
+  const handleOpenRecentFile = async (file: RecentFileEntry) => {
     try {
       // Check if file is already open
       const existingDoc = documents.find(doc =>
@@ -122,6 +104,12 @@ export const RecentFiles: React.FC = () => {
     }
   };
 
+  const handleClearRecentFiles = () => {
+    RecentFilesService.clearRecentFiles();
+    loadRecentFiles();
+    showNotification('Recent files cleared', 'info');
+  };
+
   const handleDecryptPassword = async (password: string) => {
     if (pendingEncryptedData) {
       try {
@@ -182,17 +170,28 @@ export const RecentFiles: React.FC = () => {
                 <small>No recent files</small>
               </div>
             ) : (
-              recentFiles.map((file, index) => (
-                <button
-                  key={`${file.path}-${index}`}
-                  className="menu-item"
-                  onClick={() => handleOpenRecentFile(file)}
-                >
-                  <span>{file.filename}</span>
-                  {file.source === 'external' && <span className="menu-badge">📱</span>}
-                  {file.source === 'drive' && <span className="menu-badge">☁️</span>}
-                </button>
-              ))
+              <>
+                {recentFiles.map((file, index) => (
+                  <button
+                    key={`${file.path}-${index}`}
+                    className="menu-item"
+                    onClick={() => handleOpenRecentFile(file)}
+                  >
+                    <span>{file.filename}</span>
+                    {file.source === 'external' && <span className="menu-badge">📱</span>}
+                    {file.source === 'drive' && <span className="menu-badge">☁️</span>}
+                  </button>
+                ))}
+                <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
+                  <button
+                    className="menu-item"
+                    onClick={handleClearRecentFiles}
+                    style={{ color: 'var(--error)', fontSize: '0.9em' }}
+                  >
+                    Clear Recent Files
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}

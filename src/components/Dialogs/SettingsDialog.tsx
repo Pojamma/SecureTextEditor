@@ -33,6 +33,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
     setAutoSave,
     autoSaveInterval,
     setAutoSaveInterval,
+    maxRecentFiles,
+    setMaxRecentFiles,
     specialCharsVisible,
     toggleSpecialChars,
     resetSettings,
@@ -283,6 +285,33 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                 </label>
                 <p className="setting-description">
                   Automatically restore documents from your last session on startup
+                </p>
+              </div>
+
+              {/* Max Recent Files */}
+              <div className="setting-group">
+                <label className="setting-label">Maximum Recent Files</label>
+                <select
+                  className="setting-select"
+                  value={maxRecentFiles}
+                  onChange={(e) => {
+                    const max = Number(e.target.value);
+                    setMaxRecentFiles(max);
+                    showNotification(
+                      `Recent files limit set to ${max}`,
+                      'success'
+                    );
+                  }}
+                >
+                  <option value="5">5 files</option>
+                  <option value="10">10 files</option>
+                  <option value="15">15 files</option>
+                  <option value="20">20 files</option>
+                  <option value="25">25 files</option>
+                  <option value="50">50 files</option>
+                </select>
+                <p className="setting-description">
+                  Number of recent files to keep in the sidebar menu
                 </p>
               </div>
             </div>

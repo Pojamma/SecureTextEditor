@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AppSettings } from '@/types/settings.types';
+import { RecentFilesService } from '@/services/recentFiles.service';
 
 interface SettingsState extends AppSettings {
   // Actions
@@ -17,6 +18,7 @@ interface SettingsState extends AppSettings {
   toggleCursorBlink: () => void;
   setConfirmOnExit: (enabled: boolean) => void;
   setAutoLoadLastFile: (enabled: boolean) => void;
+  setMaxRecentFiles: (max: number) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
 }
@@ -34,6 +36,7 @@ const defaultSettings: AppSettings = {
   wordWrap: true,
   tabSize: 4,
   maxTabs: 10,
+  maxRecentFiles: 10,
   cursorStyle: 'line',
   cursorBlink: true,
   confirmOnExit: false,
@@ -80,6 +83,12 @@ export const useSettingsStore = create<SettingsState>()(
       setConfirmOnExit: (confirmOnExit) => set({ confirmOnExit }),
 
       setAutoLoadLastFile: (autoLoadLastFile) => set({ autoLoadLastFile }),
+
+      setMaxRecentFiles: (maxRecentFiles) => {
+        set({ maxRecentFiles });
+        // Apply the new limit to existing recent files
+        RecentFilesService.applyMaxRecentFiles(maxRecentFiles);
+      },
 
       updateSettings: (settings) => set((state) => ({
         ...state,

@@ -34,6 +34,7 @@ export interface AppSettings {
   wordWrap: boolean;
   tabSize: number;
   maxTabs: number;
+  maxRecentFiles: number;
   cursorStyle: 'block' | 'line' | 'underline';
   cursorBlink: boolean;
   confirmOnExit: boolean;
