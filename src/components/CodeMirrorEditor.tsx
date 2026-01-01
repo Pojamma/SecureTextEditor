@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { search, highlightSelectionMatches, searchKeymap, openSearchPanel } from '@codemirror/search';
 import { EditorView, keymap, ViewUpdate } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, undo, redo } from '@codemirror/commands';
+import { getTheme } from '@/utils/themes';
 import './CodeMirrorEditor.css';
 
 export interface CodeMirrorEditorProps {
@@ -10,7 +11,7 @@ export interface CodeMirrorEditorProps {
   onChange: (value: string) => void;
   onCursorChange?: (position: number) => void;
   fontSize?: number;
-  theme?: 'light' | 'dark' | 'solarizedLight' | 'solarizedDark' | 'dracula' | 'nord';
+  theme?: string;
   placeholder?: string;
   cursorStyle?: 'block' | 'line' | 'underline';
   cursorBlink?: boolean;
@@ -220,95 +221,30 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     }
   };
 
-  // Get theme colors based on selected theme
+  // Get theme colors based on selected theme - using centralized theme system
   const getThemeColors = (themeName: string) => {
-    switch (themeName) {
-      case 'dark':
-        return {
-          bg: '#1e1e1e',
-          text: '#d4d4d4',
-          gutter: '#252526',
-          gutterText: '#858585',
-          activeLine: '#2a2a2a',
-          selection: '#264f78',
-          searchMatch: '#515c6a',
-          searchMatchSelected: '#6a8759',
-          searchOutline: '#666',
-          caret: '#ffffff',
-          isDark: true,
-        };
-      case 'solarizedLight':
-        return {
-          bg: '#fdf6e3',
-          text: '#657b83',
-          gutter: '#eee8d5',
-          gutterText: '#93a1a1',
-          activeLine: '#eee8d5',
-          selection: '#93a1a1',
-          searchMatch: '#b58900',
-          searchMatchSelected: '#cb4b16',
-          searchOutline: '#b58900',
-          caret: '#657b83',
-          isDark: false,
-        };
-      case 'solarizedDark':
-        return {
-          bg: '#002b36',
-          text: '#839496',
-          gutter: '#073642',
-          gutterText: '#586e75',
-          activeLine: '#073642',
-          selection: '#586e75',
-          searchMatch: '#b58900',
-          searchMatchSelected: '#cb4b16',
-          searchOutline: '#b58900',
-          caret: '#839496',
-          isDark: true,
-        };
-      case 'dracula':
-        return {
-          bg: '#282a36',
-          text: '#f8f8f2',
-          gutter: '#21222c',
-          gutterText: '#6272a4',
-          activeLine: '#44475a',
-          selection: '#44475a',
-          searchMatch: '#f1fa8c',
-          searchMatchSelected: '#ffb86c',
-          searchOutline: '#f1fa8c',
-          caret: '#f8f8f2',
-          isDark: true,
-        };
-      case 'nord':
-        return {
-          bg: '#2e3440',
-          text: '#d8dee9',
-          gutter: '#3b4252',
-          gutterText: '#4c566a',
-          activeLine: '#3b4252',
-          selection: '#434c5e',
-          searchMatch: '#88c0d0',
-          searchMatchSelected: '#81a1c1',
-          searchOutline: '#88c0d0',
-          caret: '#d8dee9',
-          isDark: true,
-        };
-      case 'light':
-      default:
-        return {
-          bg: '#ffffff',
-          text: '#000000',
-          gutter: '#f3f3f3',
-          gutterText: '#6e7681',
-          activeLine: '#f0f0f0',
-          selection: '#add6ff',
-          searchMatch: '#ffeb3b',
-          searchMatchSelected: '#ff9800',
-          searchOutline: '#ff9800',
-          caret: '#000000',
-          isDark: false,
-        };
-    }
+    const currentTheme = getTheme(themeName);
+
+    // Determine if the theme is dark based on background brightness
+    const isDark = parseInt(currentTheme.colors.background.slice(1, 3), 16) < 128;
+
+    // Create search match colors based on theme
+    const searchMatch = currentTheme.colors.accent;
+    const searchMatchSelected = currentTheme.colors.primary;
+
+    return {
+      bg: currentTheme.editor.background,
+      text: currentTheme.editor.text,
+      gutter: currentTheme.colors.surface,
+      gutterText: currentTheme.editor.lineNumber,
+      activeLine: currentTheme.colors.secondary,
+      selection: currentTheme.editor.selection,
+      searchMatch: searchMatch,
+      searchMatchSelected: searchMatchSelected,
+      searchOutline: searchMatch,
+      caret: currentTheme.editor.cursor,
+      isDark: isDark,
+    };
   };
 
   const colors = getThemeColors(theme);
