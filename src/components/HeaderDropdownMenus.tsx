@@ -1227,12 +1227,16 @@ export const HeaderDropdownMenus: React.FC = () => {
               </button>
 
               {/* Recent Files Section */}
-              {recentFiles.length > 0 && (
+              <div className="dropdown-menu-separator" />
+              <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Recent Files
+              </div>
+              {recentFiles.length === 0 ? (
+                <div style={{ padding: '0.6rem 1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
+                  No recent files - open some files to see them here
+                </div>
+              ) : (
                 <>
-                  <div className="dropdown-menu-separator" />
-                  <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Recent Files
-                  </div>
                   {recentFiles.map((file, index) => (
                     <button
                       key={`${file.path}-${index}`}
