@@ -74,6 +74,215 @@ User Action → Component → Service Layer → Storage/API
          Component Re-render
 ```
 
+### 2.4 Storage Architecture
+
+SecureTextEditor implements **three distinct storage systems**, each with different use cases and storage mechanisms:
+
+#### 2.4.1 Local Storage (App Internal)
+
+**Purpose**: Default storage for documents created/saved within the app
+**User Access**: File → New Document, File → Open Local File, File → Save
+**Visibility**: Files appear in the in-app file list
+
+**Storage Implementation by Platform**:
+
+| Platform | Storage Technology | Location | Notes |
+|----------|-------------------|----------|-------|
+| **Android** | Capacitor Filesystem (Directory.Data) | `/data/data/com.pojamma.securetexteditor/files/` | Private app storage, persists across sessions |
+| **Windows (Electron)** | Capacitor Filesystem → IndexedDB | Browser IndexedDB database `Disc` | Files stored as browser database entries, not actual files |
+| **Web** | Capacitor Filesystem → IndexedDB | Browser IndexedDB database `Disc` | Same as Electron, IndexedDB storage |
+
+**Key Characteristics**:
+- **Android**: Uses native filesystem in app's private directory
+- **Electron/Web**: Uses IndexedDB (browser database), NOT actual files on disk
+- Files are **not visible** in Windows File Explorer or Android file managers
+- Survives app restarts and updates
+- Managed entirely through Capacitor Filesystem API
+- Automatic permission handling (no user prompts needed)
+
+**IndexedDB Structure (Web/Electron)**:
+```typescript
+Database: "Disc"
+Object Stores:
+  - Files stored as key-value pairs
+  - Key: file path (e.g., "document.txt")
+  - Value: file content (text or base64 for binary)
+```
+
+**Important Notes**:
+- Local storage on Electron does NOT create files in `AppData/Roaming/SecureTextEditor/`
+- The folder exists for Electron app configuration, but documents are in IndexedDB
+- Use browser DevTools → Application → IndexedDB to inspect stored documents
+
+#### 2.4.2 External/Device Storage
+
+**Purpose**: Edit files from anywhere on the device (Downloads, Documents, SD card, etc.)
+**User Access**: File → Open from Device, Save As to Device
+**Visibility**: Files remain in their original locations, visible in file managers
+
+**Storage Implementation by Platform**:
+
+| Platform | Storage Technology | Location | Notes |
+|----------|-------------------|----------|-------|
+| **Android** | Storage Access Framework (SAF) | User-selected (any accessible location) | Uses content:// URIs with persistent permissions |
+| **Windows (Electron)** | Native Electron IPC + Node.js `fs` | User-selected via file picker | Direct filesystem access via IPC |
+
+**Key Characteristics**:
+- Files **saved back to original location** (write-through)
+- No file copying - direct edit of source file
+- Supports both plain text and encrypted files (.enc extension)
+- Persistent URI/path storage for session restore
+- Works with external SD cards (Android), network drives (Windows)
+
+**Android Implementation Details**:
+```typescript
+// Custom Capacitor plugin for content:// URI writes
+capacitor-file-writer plugin
+  - Handles SAF content resolver
+  - Maintains persistent permissions
+  - Validates URI accessibility on restore
+```
+
+**Windows Implementation Details**:
+```typescript
+// Electron IPC handlers (electron/src/index.ts)
+ipcMain.handle('file:pick-external')   // File picker dialog
+ipcMain.handle('file:write-external')  // Write to selected file
+ipcMain.handle('file:create-external') // Save As dialog
+```
+
+**Session Persistence**:
+- External file paths/URIs stored in session
+- Android: Validates URI accessibility on app restart
+- Windows: Checks file existence on app restart
+- Graceful error handling for moved/deleted files
+
+#### 2.4.3 Google Drive Storage
+
+**Purpose**: Cloud-based document storage with sync
+**User Access**: File → Open from Google Drive, File → Save to Google Drive
+**Visibility**: Files visible in Google Drive web interface and apps
+
+**Storage Implementation**:
+- Google Drive API v3
+- OAuth 2.0 authentication
+- Files stored in user's Google Drive
+- Metadata cached locally
+- Supports both plain text and encrypted files
+
+**Key Characteristics**:
+- Requires Google account authentication
+- Network-dependent operations
+- Automatic conflict resolution
+- Version history via Google Drive
+- Shareable links (if user chooses)
+
+#### 2.4.4 Storage Source Identification
+
+Each document in the app has a `source` field:
+
+```typescript
+interface OpenDocument {
+  path: string;
+  source: 'local' | 'external' | 'drive';
+  externalUri?: string;  // For external files (content:// or file://)
+  driveId?: string;      // For Google Drive files
+  // ... other fields
+}
+```
+
+**Save Behavior Based on Source**:
+- `'local'`: Saves to IndexedDB (Electron/Web) or app private dir (Android)
+- `'external'`: Saves back to original file via URI/path
+- `'drive'`: Uploads to Google Drive
+
+#### 2.4.5 Encryption Flow
+
+**Critical Implementation Detail** (Bug Fix - January 2026):
+
+The encryption flow was redesigned to fix a bug where encrypted documents weren't being saved properly:
+
+**Incorrect Flow** (Pre-fix):
+```typescript
+// ❌ WRONG: Encrypted but threw away result
+handleEncryptDocument(password) {
+  await encryptDocument(plainDoc, password);  // Result discarded!
+  updateDocument({ encrypted: true });        // Only set flag
+}
+```
+
+**Correct Flow** (Current):
+```typescript
+// ✓ CORRECT: Mark for encryption, encrypt at save time
+handleEncryptDocument(password) {
+  // Just mark document as needing encryption
+  updateDocument({
+    encrypted: true,
+    modified: true  // Prompts user to save
+  });
+  // Content stays plain text in memory (editable)
+}
+
+handleSave(password) {
+  if (document.encrypted && password) {
+    // Encrypt content NOW, at save time
+    const encrypted = await encryptDocument(plainDoc, password);
+    await saveFile(encrypted);
+  }
+}
+```
+
+**Why This Design**:
+1. Content stays plain text in memory (user can continue editing)
+2. Encryption only happens when saving (user provides password)
+3. No wasted encryption operations
+4. Clear separation between "mark as encrypted" and "actually encrypt"
+
+**Storage of Encrypted Documents**:
+All three storage systems handle encrypted documents the same way:
+- Encrypted documents saved as JSON with structure:
+  ```json
+  {
+    "version": 1,
+    "encrypted": true,
+    "algorithm": "AES-256-GCM",
+    "ciphertext": "base64...",
+    "iv": "base64...",
+    "salt": "base64...",
+    "authTag": "base64..."
+  }
+  ```
+- File extension: `.enc` (auto-appended for external files)
+- Same encryption format across all platforms
+- Decryption requires original password
+
+#### 2.4.6 Storage Debugging
+
+**Electron/Web - View IndexedDB**:
+1. Open DevTools (F12)
+2. Application tab → IndexedDB → Disc database
+3. Browse stored files and content
+
+**Android - View App Storage**:
+```bash
+# Via ADB
+adb shell
+cd /data/data/com.pojamma.securetexteditor/files/
+ls -la
+cat filename.txt
+```
+
+**Windows - Find Electron Data**:
+```
+User Data: C:\Users\[name]\AppData\Roaming\SecureTextEditor\
+  - This contains app config, cache, session state
+  - Documents are NOT here (they're in IndexedDB)
+
+IndexedDB Location:
+  C:\Users\[name]\AppData\Roaming\SecureTextEditor\IndexedDB\
+  (Binary database files, use DevTools to inspect)
+```
+
 ---
 
 ## 3. Security Specifications
