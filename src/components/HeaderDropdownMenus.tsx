@@ -35,11 +35,14 @@ export const HeaderDropdownMenus: React.FC = () => {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showInsertSubmenu, setShowInsertSubmenu] = useState(false);
   const [showConvertCaseSubmenu, setShowConvertCaseSubmenu] = useState(false);
+  const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
   const fileButtonRef = useRef<HTMLButtonElement>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const toolsButtonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const insertSubmenuRef = useRef<HTMLDivElement>(null);
+  const convertCaseSubmenuRef = useRef<HTMLDivElement>(null);
 
   // File menu state
   const [showFilePicker, setShowFilePicker] = useState(false);
@@ -120,6 +123,16 @@ export const HeaderDropdownMenus: React.FC = () => {
     setOpenMenu(null);
     setShowInsertSubmenu(false);
     setShowConvertCaseSubmenu(false);
+  };
+
+  const calculateSubmenuPosition = (triggerRef: React.RefObject<HTMLDivElement>) => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setSubmenuPosition({
+        top: rect.top,
+        left: rect.right + 4, // 4px gap to the right
+      });
+    }
   };
 
   const handleAction = (action: (() => void) | undefined, actionName: string) => {
@@ -1194,14 +1207,21 @@ export const HeaderDropdownMenus: React.FC = () => {
 
               {/* Insert submenu */}
               <div
+                ref={insertSubmenuRef}
                 className="dropdown-menu-item dropdown-menu-item-submenu"
-                onMouseEnter={() => setShowInsertSubmenu(true)}
+                onMouseEnter={() => {
+                  setShowInsertSubmenu(true);
+                  calculateSubmenuPosition(insertSubmenuRef);
+                }}
                 onMouseLeave={() => setShowInsertSubmenu(false)}
               >
                 <span>Insert</span>
                 <span className="dropdown-menu-arrow">▶</span>
                 {showInsertSubmenu && (
-                  <div className="dropdown-submenu-content">
+                  <div
+                    className="dropdown-submenu-content"
+                    style={{ top: submenuPosition.top, left: submenuPosition.left }}
+                  >
                     <div className="dropdown-submenu-header">Date and Time</div>
                     <button className="dropdown-menu-item" onClick={() => handleInsertDate('short')}>
                       <span>Date (MM/DD/YYYY)</span>
@@ -1268,14 +1288,21 @@ export const HeaderDropdownMenus: React.FC = () => {
 
               {/* Convert Case submenu */}
               <div
+                ref={convertCaseSubmenuRef}
                 className="dropdown-menu-item dropdown-menu-item-submenu"
-                onMouseEnter={() => setShowConvertCaseSubmenu(true)}
+                onMouseEnter={() => {
+                  setShowConvertCaseSubmenu(true);
+                  calculateSubmenuPosition(convertCaseSubmenuRef);
+                }}
                 onMouseLeave={() => setShowConvertCaseSubmenu(false)}
               >
                 <span>Convert Case</span>
                 <span className="dropdown-menu-arrow">▶</span>
                 {showConvertCaseSubmenu && (
-                  <div className="dropdown-submenu-content">
+                  <div
+                    className="dropdown-submenu-content"
+                    style={{ top: submenuPosition.top, left: submenuPosition.left }}
+                  >
                     <button className="dropdown-menu-item" onClick={() => handleConvertCase('upper')}>
                       <span>UPPERCASE</span>
                     </button>
