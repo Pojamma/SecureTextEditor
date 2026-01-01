@@ -226,7 +226,13 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
     const currentTheme = getTheme(themeName);
 
     // Determine if the theme is dark based on background brightness
-    const isDark = parseInt(currentTheme.colors.background.slice(1, 3), 16) < 128;
+    // Use proper perceived brightness formula: (0.299*R + 0.587*G + 0.114*B)
+    const bgColor = currentTheme.colors.background;
+    const r = parseInt(bgColor.slice(1, 3), 16);
+    const g = parseInt(bgColor.slice(3, 5), 16);
+    const b = parseInt(bgColor.slice(5, 7), 16);
+    const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+    const isDark = brightness < 128;
 
     // Create search match colors based on theme
     const searchMatch = currentTheme.colors.accent;
