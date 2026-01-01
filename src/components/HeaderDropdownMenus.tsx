@@ -8,7 +8,8 @@ import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
 import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
 import { FilenameDialog } from '@/components/Dialogs/FilenameDialog';
-import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile, saveAsToDevice } from '@/services/filesystem.service';
+import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile, saveAsToDevice, checkExternalFileAccess } from '@/services/filesystem.service';
+import { RecentFilesService, RecentFileEntry } from '@/services/recentFiles.service';
 import {
   isAuthenticated,
   signIn,
@@ -69,6 +70,18 @@ export const HeaderDropdownMenus: React.FC = () => {
     filename: string;
   } | null>(null);
 
+  // Recent files state
+  const [recentFiles, setRecentFiles] = useState<RecentFileEntry[]>([]);
+  const [pendingRecentEncryptedData, setPendingRecentEncryptedData] = useState<{
+    data: EncryptedDocument;
+    path: string;
+  } | null>(null);
+  const [pendingRecentExternalFile, setPendingRecentExternalFile] = useState<{
+    data: EncryptedDocument | string;
+    uri: string;
+    filename: string;
+  } | null>(null);
+
   // Security menu state
   const [dialogMode, setDialogMode] = useState<'encrypt' | 'decrypt' | 'change'>('encrypt');
 
@@ -83,6 +96,12 @@ export const HeaderDropdownMenus: React.FC = () => {
   useEffect(() => {
     isAuthenticated().then(setDriveAuthenticated);
   }, []);
+
+  // Load recent files
+  useEffect(() => {
+    const files = RecentFilesService.getRecentFiles();
+    setRecentFiles(files);
+  }, [documents]); // Reload when documents change
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -230,6 +249,57 @@ export const HeaderDropdownMenus: React.FC = () => {
   };
 
   const handleDecryptPassword = async (password: string) => {
+    // Handle recent files decryption
+    if (pendingRecentEncryptedData) {
+      try {
+        const document = await decryptFile(
+          pendingRecentEncryptedData.data,
+          password,
+          pendingRecentEncryptedData.path
+        );
+        addDocument(document);
+        showNotification(`Opened and decrypted "${document.metadata.filename}"`, 'success');
+        closeMenu();
+      } catch (error) {
+        showNotification(
+          error instanceof Error ? error.message : 'Decryption failed',
+          'error'
+        );
+      } finally {
+        setShowPasswordDialog(false);
+        setPendingRecentEncryptedData(null);
+      }
+      return;
+    }
+
+    // Handle recent external files decryption
+    if (pendingRecentExternalFile) {
+      try {
+        const document = await decryptExternalFile(
+          pendingRecentExternalFile.data,
+          password,
+          pendingRecentExternalFile.filename,
+          pendingRecentExternalFile.uri
+        );
+        addDocument(document);
+        showNotification(
+          `Opened and decrypted "${pendingRecentExternalFile.filename}" from device`,
+          'success'
+        );
+        closeMenu();
+      } catch (error) {
+        showNotification(
+          error instanceof Error ? error.message : 'Decryption failed',
+          'error'
+        );
+      } finally {
+        setShowPasswordDialog(false);
+        setPendingRecentExternalFile(null);
+      }
+      return;
+    }
+
+    // Handle regular file decryption
     if (!pendingEncryptedData) return;
 
     try {
@@ -448,6 +518,81 @@ export const HeaderDropdownMenus: React.FC = () => {
       setShowPasswordDialog(false);
       setPendingExternalFile(null);
     }
+  };
+
+  // Recent Files handlers
+  const handleOpenRecentFile = async (file: RecentFileEntry) => {
+    try {
+      // Check if file is already open
+      const existingDoc = documents.find(doc =>
+        doc.path === file.path ||
+        (file.source === 'external' && doc.externalUri === file.externalUri)
+      );
+
+      if (existingDoc) {
+        setActiveDocument(existingDoc.id);
+        showNotification(`Switched to "${file.filename}"`, 'info');
+        closeMenu();
+        return;
+      }
+
+      if (file.source === 'external') {
+        // For external files, check if still accessible
+        if (!file.externalUri) {
+          showNotification('External file URI not available', 'error');
+          return;
+        }
+
+        const accessible = await checkExternalFileAccess(file.externalUri);
+        if (!accessible) {
+          showNotification(`File "${file.filename}" is no longer accessible`, 'warning');
+          return;
+        }
+
+        const result = await readExternalFile();
+
+        if (result.requiresPassword && result.encryptedData) {
+          setPendingRecentExternalFile({
+            data: result.encryptedData,
+            uri: result.document.externalUri || '',
+            filename: result.document.metadata.filename,
+          });
+          setShowPasswordDialog(true);
+        } else {
+          addDocument(result.document);
+          showNotification(`Opened "${file.filename}" from device`, 'success');
+          closeMenu();
+        }
+      } else if (file.source === 'local') {
+        const result = await readFile(file.path);
+
+        if (result.requiresPassword && result.encryptedData) {
+          setPendingRecentEncryptedData({
+            data: result.encryptedData,
+            path: file.path,
+          });
+          setShowPasswordDialog(true);
+        } else {
+          addDocument(result.document);
+          showNotification(`Opened "${file.filename}"`, 'success');
+          closeMenu();
+        }
+      } else {
+        showNotification('Opening from Google Drive... Use File → Open from Google Drive', 'info');
+        closeMenu();
+      }
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? error.message : 'Failed to open file',
+        'error'
+      );
+    }
+  };
+
+  const handleClearRecentFiles = () => {
+    RecentFilesService.clearRecentFiles();
+    setRecentFiles([]);
+    showNotification('Recent files cleared', 'info');
   };
 
   const handleSave = async () => {
@@ -1080,6 +1225,34 @@ export const HeaderDropdownMenus: React.FC = () => {
                 <span>Open from Google Drive</span>
                 <span className="dropdown-menu-shortcut">Ctrl+Shift+O</span>
               </button>
+
+              {/* Recent Files Section */}
+              {recentFiles.length > 0 && (
+                <>
+                  <div className="dropdown-menu-separator" />
+                  <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Recent Files
+                  </div>
+                  {recentFiles.map((file, index) => (
+                    <button
+                      key={`${file.path}-${index}`}
+                      className="dropdown-menu-item"
+                      onClick={() => handleOpenRecentFile(file)}
+                    >
+                      <span>{file.filename}</span>
+                      {file.source === 'external' && <span style={{ marginLeft: '0.5rem' }}>📱</span>}
+                      {file.source === 'drive' && <span style={{ marginLeft: '0.5rem' }}>☁️</span>}
+                    </button>
+                  ))}
+                  <button
+                    className="dropdown-menu-item"
+                    onClick={handleClearRecentFiles}
+                    style={{ color: 'var(--color-error)', fontSize: '0.9em' }}
+                  >
+                    Clear Recent Files
+                  </button>
+                </>
+              )}
 
               <div className="dropdown-menu-separator" />
 

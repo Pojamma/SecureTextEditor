@@ -9,7 +9,6 @@ import { useAndroidBackButton } from './hooks/useAndroidBackButton';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useKeyboard } from './hooks/useKeyboard';
-import { HamburgerMenu } from './components/Menus/HamburgerMenu';
 import { HeaderDropdownMenus } from './components/HeaderDropdownMenus';
 import { Notification } from './components/Notification';
 import { EditorTabs } from './components/EditorTabs';
@@ -49,7 +48,7 @@ const App: React.FC = () => {
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
   const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, lineNumbers, confirmOnExit, autoLoadLastFile } = useSettingsStore();
-  const { toggleMenu, showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, menus, confirmDialogConfig, showConfirmDialog, hideConfirmDialog, setEditorActions } = useUIStore();
+  const { showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, confirmDialogConfig, showConfirmDialog, hideConfirmDialog, setEditorActions } = useUIStore();
 
   // Auto-save hook
   const { status: autoSaveStatus } = useAutoSave({
@@ -124,12 +123,6 @@ const App: React.FC = () => {
       // Priority 2: Close search all tabs panel
       if (searchAllTabsVisible) {
         hideSearchAllTabs();
-        return true;
-      }
-
-      // Priority 3: Close hamburger menu
-      if (menus.hamburgerMenu) {
-        toggleMenu('hamburgerMenu');
         return true;
       }
 
@@ -783,7 +776,6 @@ Start typing to edit this document...`,
 
   return (
     <div className="app">
-      <HamburgerMenu />
       <Notification />
 
       {/* Password dialog for decrypting encrypted files from session */}
@@ -871,13 +863,6 @@ Start typing to edit this document...`,
 
       <header className="header">
         <div className="toolbar">
-          <button
-            className="menu-button"
-            onClick={() => toggleMenu('hamburgerMenu')}
-            title="Menu (or try Ctrl+N for new doc)"
-          >
-            ☰
-          </button>
           <h1 className="app-title">SecureTextEditor</h1>
           <HeaderDropdownMenus />
           <div className="toolbar-actions">
