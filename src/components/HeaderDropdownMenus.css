@@ -35,7 +35,8 @@
   position: fixed; /* Fixed positioning relative to viewport to escape container bounds */
   min-width: 220px;
   max-height: calc(100vh - 100px); /* Leave space from viewport edges */
-  overflow-y: auto; /* Enable scrolling */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: visible; /* Allow submenus to extend beyond menu boundaries */
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -136,6 +137,7 @@
   .dropdown-menu-content {
     min-width: 200px;
     max-height: calc(100vh - 80px); /* More space on tablets */
+    overflow-x: visible; /* Allow submenus to extend beyond menu boundaries */
   }
 
   .dropdown-submenu-content {
@@ -161,6 +163,7 @@
   .dropdown-menu-content {
     max-height: calc(100vh - 60px); /* Maximum space on phones */
     max-width: calc(100vw - 20px); /* Prevent overflow on small screens */
+    overflow-x: visible; /* Allow submenus to extend beyond menu boundaries */
   }
 
   .dropdown-submenu-content {
