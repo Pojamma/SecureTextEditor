@@ -154,9 +154,15 @@ export const HeaderDropdownMenus: React.FC = () => {
   const calculateSubmenuPosition = (triggerRef: React.RefObject<HTMLDivElement>) => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      const submenuWidth = 250; // Approximate submenu width
+
+      // On mobile or if submenu would go off-screen, position to the left
+      const positionLeft = windowWidth < 768 || (rect.right + submenuWidth > windowWidth);
+
       setSubmenuPosition({
         top: rect.top,
-        left: rect.right - 2, // Slight overlap to prevent gap
+        left: positionLeft ? rect.left - submenuWidth + 2 : rect.right - 2,
       });
     }
   };
@@ -1238,8 +1244,13 @@ export const HeaderDropdownMenus: React.FC = () => {
               <div
                 ref={recentFilesSubmenuRef}
                 className="dropdown-menu-item dropdown-menu-item-submenu"
-                onMouseEnter={() => handleSubmenuMouseEnter('recentFiles', recentFilesSubmenuRef)}
-                onMouseLeave={() => handleSubmenuMouseLeave('recentFiles')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowRecentFilesSubmenu(!showRecentFilesSubmenu);
+                  if (!showRecentFilesSubmenu) {
+                    calculateSubmenuPosition(recentFilesSubmenuRef);
+                  }
+                }}
               >
                 <span>Recent Files</span>
                 <span className="dropdown-menu-arrow">▶</span>
@@ -1247,13 +1258,6 @@ export const HeaderDropdownMenus: React.FC = () => {
                   <div
                     className="dropdown-submenu-content"
                     style={{ top: submenuPosition.top, left: submenuPosition.left }}
-                    onMouseEnter={() => {
-                      if (submenuTimeoutRef.current) {
-                        clearTimeout(submenuTimeoutRef.current);
-                        submenuTimeoutRef.current = null;
-                      }
-                    }}
-                    onMouseLeave={() => handleSubmenuMouseLeave('recentFiles')}
                   >
                     {recentFiles.length === 0 ? (
                       <div style={{ padding: '0.6rem 1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
