@@ -8,6 +8,7 @@ import { FilePickerDialog } from '@/components/Dialogs/FilePickerDialog';
 import { DriveFilePickerDialog } from '@/components/Dialogs/DriveFilePickerDialog';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
 import { FilenameDialog } from '@/components/Dialogs/FilenameDialog';
+import { RecentFilesDialog } from '@/components/Dialogs/RecentFilesDialog';
 import { readFile, decryptFile, saveFile, saveFileAs, readExternalFile, decryptExternalFile, saveExternalFile, saveAsToDevice, checkExternalFileAccess } from '@/services/filesystem.service';
 import { RecentFilesService, RecentFileEntry } from '@/services/recentFiles.service';
 import {
@@ -36,7 +37,6 @@ export const HeaderDropdownMenus: React.FC = () => {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showInsertSubmenu, setShowInsertSubmenu] = useState(false);
   const [showConvertCaseSubmenu, setShowConvertCaseSubmenu] = useState(false);
-  const [showRecentFilesSubmenu, setShowRecentFilesSubmenu] = useState(false);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
   const submenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -46,13 +46,13 @@ export const HeaderDropdownMenus: React.FC = () => {
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const insertSubmenuRef = useRef<HTMLDivElement>(null);
   const convertCaseSubmenuRef = useRef<HTMLDivElement>(null);
-  const recentFilesSubmenuRef = useRef<HTMLDivElement>(null);
 
   // File menu state
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [showDrivePicker, setShowDrivePicker] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showFilenameDialog, setShowFilenameDialog] = useState(false);
+  const [showRecentFilesDialog, setShowRecentFilesDialog] = useState(false);
   const [suggestedFilename, setSuggestedFilename] = useState('');
   const [passwordForSaveAs, setPasswordForSaveAs] = useState<string | undefined>();
   const [pendingEncryptedData, setPendingEncryptedData] = useState<{
@@ -112,7 +112,6 @@ export const HeaderDropdownMenus: React.FC = () => {
         setOpenMenu(null);
         setShowInsertSubmenu(false);
         setShowConvertCaseSubmenu(false);
-        setShowRecentFilesSubmenu(false);
       }
     };
 
@@ -127,7 +126,6 @@ export const HeaderDropdownMenus: React.FC = () => {
       setOpenMenu(null);
       setShowInsertSubmenu(false);
       setShowConvertCaseSubmenu(false);
-      setShowRecentFilesSubmenu(false);
     } else {
       // Calculate position based on button location
       if (buttonRef.current) {
@@ -140,7 +138,6 @@ export const HeaderDropdownMenus: React.FC = () => {
       setOpenMenu(menu);
       setShowInsertSubmenu(false);
       setShowConvertCaseSubmenu(false);
-      setShowRecentFilesSubmenu(false);
     }
   };
 
@@ -148,7 +145,6 @@ export const HeaderDropdownMenus: React.FC = () => {
     setOpenMenu(null);
     setShowInsertSubmenu(false);
     setShowConvertCaseSubmenu(false);
-    setShowRecentFilesSubmenu(false);
   };
 
   const calculateSubmenuPosition = (triggerRef: React.RefObject<HTMLDivElement>) => {
@@ -167,7 +163,7 @@ export const HeaderDropdownMenus: React.FC = () => {
     }
   };
 
-  const handleSubmenuMouseEnter = (submenu: 'insert' | 'convertCase' | 'recentFiles', triggerRef: React.RefObject<HTMLDivElement>) => {
+  const handleSubmenuMouseEnter = (submenu: 'insert' | 'convertCase', triggerRef: React.RefObject<HTMLDivElement>) => {
     // Clear any pending timeout
     if (submenuTimeoutRef.current) {
       clearTimeout(submenuTimeoutRef.current);
@@ -178,21 +174,17 @@ export const HeaderDropdownMenus: React.FC = () => {
       setShowInsertSubmenu(true);
     } else if (submenu === 'convertCase') {
       setShowConvertCaseSubmenu(true);
-    } else if (submenu === 'recentFiles') {
-      setShowRecentFilesSubmenu(true);
     }
     calculateSubmenuPosition(triggerRef);
   };
 
-  const handleSubmenuMouseLeave = (submenu: 'insert' | 'convertCase' | 'recentFiles') => {
+  const handleSubmenuMouseLeave = (submenu: 'insert' | 'convertCase') => {
     // Delay hiding to allow mouse to move to submenu
     submenuTimeoutRef.current = setTimeout(() => {
       if (submenu === 'insert') {
         setShowInsertSubmenu(false);
       } else if (submenu === 'convertCase') {
         setShowConvertCaseSubmenu(false);
-      } else if (submenu === 'recentFiles') {
-        setShowRecentFilesSubmenu(false);
       }
     }, 150); // 150ms delay
   };
@@ -548,6 +540,7 @@ export const HeaderDropdownMenus: React.FC = () => {
       if (existingDoc) {
         setActiveDocument(existingDoc.id);
         showNotification(`Switched to "${file.filename}"`, 'info');
+        setShowRecentFilesDialog(false);
         closeMenu();
         return;
       }
@@ -577,6 +570,7 @@ export const HeaderDropdownMenus: React.FC = () => {
         } else {
           addDocument(result.document);
           showNotification(`Opened "${file.filename}" from device`, 'success');
+          setShowRecentFilesDialog(false);
           closeMenu();
         }
       } else if (file.source === 'local') {
@@ -591,10 +585,12 @@ export const HeaderDropdownMenus: React.FC = () => {
         } else {
           addDocument(result.document);
           showNotification(`Opened "${file.filename}"`, 'success');
+          setShowRecentFilesDialog(false);
           closeMenu();
         }
       } else {
         showNotification('Opening from Google Drive... Use File → Open from Google Drive', 'info');
+        setShowRecentFilesDialog(false);
         closeMenu();
       }
     } catch (error) {
@@ -608,6 +604,7 @@ export const HeaderDropdownMenus: React.FC = () => {
   const handleClearRecentFiles = () => {
     RecentFilesService.clearRecentFiles();
     setRecentFiles([]);
+    setShowRecentFilesDialog(false);
     showNotification('Recent files cleared', 'info');
   };
 
@@ -1240,55 +1237,19 @@ export const HeaderDropdownMenus: React.FC = () => {
 
               <div className="dropdown-menu-separator" />
 
-              {/* Recent Files Submenu */}
-              <div
-                ref={recentFilesSubmenuRef}
-                className="dropdown-menu-item dropdown-menu-item-submenu"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowRecentFilesSubmenu(!showRecentFilesSubmenu);
-                  if (!showRecentFilesSubmenu) {
-                    calculateSubmenuPosition(recentFilesSubmenuRef);
-                  }
+              {/* Recent Files */}
+              <button
+                className="dropdown-menu-item"
+                onClick={() => {
+                  setShowRecentFilesDialog(true);
+                  closeMenu();
                 }}
               >
                 <span>Recent Files</span>
-                <span className="dropdown-menu-arrow">▶</span>
-                {showRecentFilesSubmenu && (
-                  <div
-                    className="dropdown-submenu-content"
-                    style={{ top: submenuPosition.top, left: submenuPosition.left }}
-                  >
-                    {recentFiles.length === 0 ? (
-                      <div style={{ padding: '0.6rem 1rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
-                        No recent files yet
-                      </div>
-                    ) : (
-                      <>
-                        {recentFiles.map((file, index) => (
-                          <button
-                            key={`${file.path}-${index}`}
-                            className="dropdown-menu-item"
-                            onClick={() => handleOpenRecentFile(file)}
-                          >
-                            <span>{file.filename}</span>
-                            {file.source === 'external' && <span style={{ marginLeft: '0.5rem' }}>📱</span>}
-                            {file.source === 'drive' && <span style={{ marginLeft: '0.5rem' }}>☁️</span>}
-                          </button>
-                        ))}
-                        <div className="dropdown-menu-separator" />
-                        <button
-                          className="dropdown-menu-item"
-                          onClick={handleClearRecentFiles}
-                          style={{ color: 'var(--color-error)', fontSize: '0.9em' }}
-                        >
-                          Clear Recent Files
-                        </button>
-                      </>
-                    )}
-                  </div>
+                {recentFiles.length > 0 && (
+                  <span className="dropdown-menu-shortcut">{recentFiles.length}</span>
                 )}
-              </div>
+              </button>
 
               <div className="dropdown-menu-separator" />
 
@@ -1679,6 +1640,15 @@ export const HeaderDropdownMenus: React.FC = () => {
             setPasswordForSaveAs(undefined);
             setSaveAsMode(false);
           }}
+        />
+      )}
+
+      {showRecentFilesDialog && (
+        <RecentFilesDialog
+          recentFiles={recentFiles}
+          onSelect={handleOpenRecentFile}
+          onClear={handleClearRecentFiles}
+          onCancel={() => setShowRecentFilesDialog(false)}
         />
       )}
     </>

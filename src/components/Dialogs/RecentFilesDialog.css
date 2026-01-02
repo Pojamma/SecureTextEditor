@@ -1,0 +1,140 @@
+.recent-files-dialog {
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+}
+
+.recent-files-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-file-item {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: background-color 0.15s ease;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.recent-file-item:hover {
+  background-color: var(--color-hover-bg);
+}
+
+.recent-file-item:active {
+  background-color: var(--color-active-bg);
+}
+
+.recent-file-item:last-child {
+  border-bottom: none;
+}
+
+.recent-file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.recent-file-name {
+  color: var(--color-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-file-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recent-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  padding: 0.125rem 0.375rem;
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.25rem;
+}
+
+.recent-file-badge-local {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+}
+
+.recent-file-arrow {
+  color: var(--color-text-secondary);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.recent-files-empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.recent-files-empty p {
+  margin: 0.5rem 0;
+}
+
+.recent-files-empty-hint {
+  font-size: 0.875rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .recent-files-dialog {
+    width: 95%;
+    max-height: 85vh;
+  }
+
+  .recent-files-list {
+    max-height: 60vh;
+  }
+
+  .recent-file-item {
+    padding: 1rem 0.875rem;
+    font-size: 1rem;
+  }
+
+  .recent-file-badge {
+    font-size: 0.7rem;
+  }
+}
+
+/* Scrollbar styling for recent files list */
+.recent-files-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.recent-files-list::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+  border-radius: 4px;
+}
+
+.recent-files-list::-webkit-scrollbar-thumb {
+  background: var(--color-text-secondary);
+  border-radius: 4px;
+}
+
+.recent-files-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text);
+}
