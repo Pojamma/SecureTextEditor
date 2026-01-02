@@ -3,6 +3,7 @@
  */
 
 import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Download a file to the user's device
@@ -85,10 +86,25 @@ function escapeHtml(text: string): string {
 
 /**
  * Share document using Capacitor Share plugin (works on Android, iOS, and Web)
+ * On Electron/desktop, copies to clipboard as sharing is not natively supported
  */
 export async function shareDocument(filename: string, content: string): Promise<boolean> {
+  const platform = Capacitor.getPlatform();
+
+  // On Electron (Windows/Linux desktop), share API is not available
+  // Copy to clipboard instead as a practical alternative
+  if (platform === 'electron') {
+    try {
+      await copyToClipboard(content, false);
+      return true;
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      return false;
+    }
+  }
+
+  // On Android, iOS, and Web - use native share
   try {
-    // Use Capacitor Share plugin - works on all platforms
     await Share.share({
       title: filename,
       text: content,

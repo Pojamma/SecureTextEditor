@@ -947,15 +947,21 @@ export const HeaderDropdownMenus: React.FC = () => {
     }
 
     try {
+      // Check platform to provide appropriate feedback
+      const isElectron = window.navigator.userAgent.includes('Electron');
+
       const shared = await shareDocument(
         activeDoc.metadata.filename,
         activeDoc.content
       );
 
       if (shared) {
-        showNotification('Document shared successfully', 'success');
+        if (isElectron) {
+          showNotification('Content copied to clipboard', 'success');
+        } else {
+          showNotification('Document shared successfully', 'success');
+        }
       } else {
-        // User cancelled sharing
         showNotification('Share cancelled', 'info');
       }
       closeMenu();
