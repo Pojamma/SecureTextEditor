@@ -953,14 +953,10 @@ export const HeaderDropdownMenus: React.FC = () => {
       );
 
       if (shared) {
-        showNotification('Document shared', 'success');
+        showNotification('Document shared successfully', 'success');
       } else {
-        // Web Share API not supported - fallback to copy to clipboard
-        await copyToClipboard(activeDoc.content, activeDoc.encrypted);
-        showNotification(
-          'Share not available on this device. Content copied to clipboard instead.',
-          'info'
-        );
+        // User cancelled sharing
+        showNotification('Share cancelled', 'info');
       }
       closeMenu();
     } catch (error) {

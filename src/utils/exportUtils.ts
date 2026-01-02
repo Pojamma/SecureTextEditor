@@ -2,6 +2,8 @@
  * Export utility functions for saving documents in various formats
  */
 
+import { Share } from '@capacitor/share';
+
 /**
  * Download a file to the user's device
  */
@@ -82,41 +84,21 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Share document using Web Share API (if available)
+ * Share document using Capacitor Share plugin (works on Android, iOS, and Web)
  */
 export async function shareDocument(filename: string, content: string): Promise<boolean> {
-  // Check if Web Share API is supported
-  if (!navigator.share) {
-    return false;
-  }
-
   try {
-    // Create a file to share
-    const file = new File([content], filename, { type: 'text/plain' });
-
-    // Try to share with file
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        title: filename,
-        text: `Sharing document: ${filename}`,
-        files: [file]
-      });
-      return true;
-    } else {
-      // Fallback to sharing just text
-      await navigator.share({
-        title: filename,
-        text: content
-      });
-      return true;
-    }
+    // Use Capacitor Share plugin - works on all platforms
+    await Share.share({
+      title: filename,
+      text: content,
+      dialogTitle: `Share ${filename}`
+    });
+    return true;
   } catch (error) {
-    // User cancelled or error occurred
-    if ((error as Error).name === 'AbortError') {
-      // User cancelled - not an error
-      return false;
-    }
-    throw error;
+    // User cancelled or sharing not available
+    console.log('Share cancelled or not available:', error);
+    return false;
   }
 }
 
