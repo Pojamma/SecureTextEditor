@@ -47,7 +47,7 @@ const App: React.FC = () => {
   // Store hooks
   const { documents, activeDocumentId, addDocument, updateContent, updateDocument, getActiveDocument, closeDocument, setActiveDocument, restoreSession, getModifiedDocuments } =
     useDocumentStore();
-  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, lineNumbers, confirmOnExit, autoLoadLastFile } = useSettingsStore();
+  const { theme, setTheme, fontSize, setFontSize, statusBar, specialCharsVisible, cursorStyle, cursorBlink, wordWrap, lineNumbers, confirmOnExit, autoLoadLastFile, backButtonExitConfirmation, backButtonClosesTab } = useSettingsStore();
   const { showNotification, dialogs, openDialog, closeDialog, showSearchAllTabs, searchAllTabsVisible, hideSearchAllTabs, confirmDialogConfig, showConfirmDialog, hideConfirmDialog, setEditorActions } = useUIStore();
 
   // Auto-save hook
@@ -109,6 +109,10 @@ const App: React.FC = () => {
   useAndroidBackButton({
     onBackPress: () => {
       // Priority 1: Close any open dialogs
+      if (confirmDialogConfig) {
+        hideConfirmDialog();
+        return true;
+      }
       if (dialogs.statisticsDialog) {
         closeDialog('statisticsDialog');
         return true;
@@ -128,7 +132,51 @@ const App: React.FC = () => {
         return true;
       }
 
-      // If nothing to close, allow default behavior (exit app)
+      // Priority 3: If backButtonClosesTab is enabled, close current tab
+      if (backButtonClosesTab && documents.length > 0) {
+        const activeDoc = getActiveDocument();
+        if (activeDoc) {
+          // If the tab has unsaved changes, show confirmation
+          if (activeDoc.modified) {
+            showConfirmDialog({
+              title: 'Unsaved Changes',
+              message: `"${activeDoc.metadata.filename}" has unsaved changes. Close anyway?`,
+              confirmText: 'Close',
+              cancelText: 'Cancel',
+              onConfirm: () => {
+                closeDocument(activeDoc.id);
+                hideConfirmDialog();
+              },
+              onCancel: hideConfirmDialog,
+            });
+          } else {
+            closeDocument(activeDoc.id);
+          }
+          return true;
+        }
+      }
+
+      // Priority 4: If at home screen (no tabs) or about to exit, show confirmation if enabled
+      if (backButtonExitConfirmation) {
+        showConfirmDialog({
+          title: 'Exit App',
+          message: 'Are you sure you want to exit SecureTextEditor?',
+          confirmText: 'Exit',
+          cancelText: 'Cancel',
+          onConfirm: () => {
+            hideConfirmDialog();
+            // Use setTimeout to ensure dialog closes before exit
+            setTimeout(() => {
+              const { App: CapacitorApp } = require('@capacitor/app');
+              CapacitorApp.exitApp();
+            }, 100);
+          },
+          onCancel: hideConfirmDialog,
+        });
+        return true;
+      }
+
+      // If confirmation disabled, allow default behavior (exit app)
       return false;
     },
   });

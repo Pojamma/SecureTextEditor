@@ -37,6 +37,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
     setMaxRecentFiles,
     specialCharsVisible,
     toggleSpecialChars,
+    backButtonExitConfirmation,
+    setBackButtonExitConfirmation,
+    backButtonClosesTab,
+    setBackButtonClosesTab,
     resetSettings,
   } = useSettingsStore();
 
@@ -333,6 +337,36 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
                 <p className="setting-description">
                   Number of recent files to keep in the sidebar menu
                 </p>
+              </div>
+
+              {/* Back Button Settings */}
+              <div className="setting-group">
+                <label className="setting-label">Back Button (Android)</label>
+                <div className="setting-checkboxes">
+                  <label className="setting-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={backButtonExitConfirmation}
+                      onChange={(e) => setBackButtonExitConfirmation(e.target.checked)}
+                    />
+                    <span>Confirm Before Exit</span>
+                  </label>
+                  <p className="setting-description">
+                    Show confirmation dialog when pressing back button to exit the app
+                  </p>
+
+                  <label className="setting-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={backButtonClosesTab}
+                      onChange={(e) => setBackButtonClosesTab(e.target.checked)}
+                    />
+                    <span>Close Tab Instead of Exit</span>
+                  </label>
+                  <p className="setting-description">
+                    Back button closes the current tab and returns to home screen. At home screen, back button exits the app.
+                  </p>
+                </div>
               </div>
             </div>
           )}

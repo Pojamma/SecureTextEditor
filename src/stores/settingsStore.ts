@@ -19,6 +19,8 @@ interface SettingsState extends AppSettings {
   setConfirmOnExit: (enabled: boolean) => void;
   setAutoLoadLastFile: (enabled: boolean) => void;
   setMaxRecentFiles: (max: number) => void;
+  setBackButtonExitConfirmation: (enabled: boolean) => void;
+  setBackButtonClosesTab: (enabled: boolean) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
 }
@@ -41,6 +43,8 @@ const defaultSettings: AppSettings = {
   cursorBlink: true,
   confirmOnExit: false,
   autoLoadLastFile: true,
+  backButtonExitConfirmation: true,
+  backButtonClosesTab: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -89,6 +93,10 @@ export const useSettingsStore = create<SettingsState>()(
         // Apply the new limit to existing recent files
         RecentFilesService.applyMaxRecentFiles(maxRecentFiles);
       },
+
+      setBackButtonExitConfirmation: (backButtonExitConfirmation) => set({ backButtonExitConfirmation }),
+
+      setBackButtonClosesTab: (backButtonClosesTab) => set({ backButtonClosesTab }),
 
       updateSettings: (settings) => set((state) => ({
         ...state,

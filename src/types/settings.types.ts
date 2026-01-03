@@ -39,6 +39,8 @@ export interface AppSettings {
   cursorBlink: boolean;
   confirmOnExit: boolean;
   autoLoadLastFile: boolean;
+  backButtonExitConfirmation: boolean;
+  backButtonClosesTab: boolean;
 }
 
 export interface Session {

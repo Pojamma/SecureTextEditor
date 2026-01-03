@@ -117,12 +117,17 @@ export async function readFile(
         modified: false,
         cursorPosition: 0,
         scrollPosition: 0,
-        metadata: plainDoc.metadata,
+        metadata: {
+          ...plainDoc.metadata,
+          // Always use the actual filename from the path, not the stored metadata
+          // This ensures copied files show the correct name
+          filename: getFilenameFromPath(path),
+        },
       };
 
       // Add to recent files
       RecentFilesService.addRecentFile({
-        filename: plainDoc.metadata.filename,
+        filename: document.metadata.filename,
         path: path,
         source: 'local',
       });
@@ -187,12 +192,17 @@ export async function decryptFile(
       modified: false,
       cursorPosition: 0,
       scrollPosition: 0,
-      metadata: plainDoc.metadata,
+      metadata: {
+        ...plainDoc.metadata,
+        // Always use the actual filename from the path, not the stored metadata
+        // This ensures copied files show the correct name
+        filename: getFilenameFromPath(path),
+      },
     };
 
     // Add to recent files after successful decryption
     RecentFilesService.addRecentFile({
-      filename: plainDoc.metadata.filename,
+      filename: document.metadata.filename,
       path: path,
       source: 'local',
     });
