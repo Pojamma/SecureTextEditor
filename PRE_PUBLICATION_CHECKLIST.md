@@ -124,7 +124,7 @@ Before publishing, test that a fresh clone works:
 ```bash
 # In a different directory
 cd /tmp
-git clone /home/bob/SecureTextEditor test-clone
+git clone <your-repo-path> test-clone
 cd test-clone
 
 # Verify .env is NOT present
@@ -149,7 +149,7 @@ Read through one final time:
 ### 3. Commit Legal Documents
 
 ```bash
-cd /home/bob/SecureTextEditor
+cd <your-repo-directory>
 
 git add LICENSE DISCLAIMER.md SECURITY.md CONTRIBUTING.md README.md package.json PRE_PUBLICATION_CHECKLIST.md
 
