@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureTextEditor - Performance Test Suite</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .error {
+            border-left-color: #f44336;
+            color: #d32f2f;
+        }
+        .warning {
+            border-left-color: #ff9800;
+            color: #f57c00;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            color: #388e3c;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-name {
+            font-weight: bold;
+            color: #555;
+        }
+        .metric-value {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        .progress {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+            color: #333;
+        }
+        .status-pass {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .status-fail {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .status-warn {
+            color: #ff9800;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 SecureTextEditor - Performance Test Suite</h1>
+
+    <div class="test-section">
+        <h2>📊 Performance Benchmarks</h2>
+        <p>This test suite measures the performance characteristics of the SecureTextEditor encryption service, file operations, and UI rendering.</p>
+
+        <div class="test-controls">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="runEncryptionTests()">Test Encryption Performance</button>
+            <button onclick="runMemoryTests()">Test Memory Usage</button>
+            <button onclick="runRenderTests()">Test Render Performance</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div id="overall-progress" style="display:none;">
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <div id="progress-text" style="text-align: center; margin-top: 5px; color: #666;">
+                0% Complete
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Configuration</h2>
+        <div class="metric">
+            <span class="metric-name">Browser:</span>
+            <span class="metric-value" id="browser-info"></span>
+        </div>
+        <div class="metric">
+            <span class="metric-name">Platform:</span>
+            <span class="metric-value" id="platform-info"></span>
+        </div>
+        <div class="metric">
+            <span class="metric-name">Memory:</span>
+            <span class="metric-value" id="memory-info"></span>
+        </div>
+        <div class="metric">
+            <span class="metric-name">Cores:</span>
+            <span class="metric-value" id="cores-info"></span>
+        </div>
+    </div>
+
+    <script type="module">
+        // Initialize system info
+        document.getElementById('browser-info').textContent = navigator.userAgent.split('(')[1].split(')')[0];
+        document.getElementById('platform-info').textContent = navigator.platform;
+        document.getElementById('memory-info').textContent = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown';
+        document.getElementById('cores-info').textContent = navigator.hardwareConcurrency || 'Unknown';
+
+        // Utility functions
+        function formatTime(ms) {
+            if (ms < 1) return `${(ms * 1000).toFixed(2)} μs`;
+            if (ms < 1000) return `${ms.toFixed(2)} ms`;
+            return `${(ms / 1000).toFixed(2)} s`;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return `${bytes} B`;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+            return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        function addResult(title, content, type = 'success') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `results ${type}`;
+            div.innerHTML = `<strong>${title}</strong><br>${content}`;
+            results.appendChild(div);
+        }
+
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const container = document.getElementById('overall-progress');
+
+            container.style.display = 'block';
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = text || `${percent}% Complete`;
+        }
+
+        // Generate test data
+        function generateText(sizeInBytes) {
+            const line = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.\n';
+            const numLines = Math.ceil(sizeInBytes / line.length);
+            let text = '';
+            for (let i = 0; i < numLines; i++) {
+                text += `Line ${i + 1}: ${line}`;
+            }
+            return text.substring(0, sizeInBytes);
+        }
+
+        // Encryption tests
+        async function testEncryptionPerformance(text, label) {
+            const startTime = performance.now();
+
+            // We'll use Web Crypto API directly
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+
+            // Generate key
+            const password = 'test-password-123';
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            );
+
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: 600000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt', 'decrypt']
+            );
+
+            // Encrypt
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encryptStart = performance.now();
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                data
+            );
+            const encryptTime = performance.now() - encryptStart;
+
+            // Decrypt
+            const decryptStart = performance.now();
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                encrypted
+            );
+            const decryptTime = performance.now() - decryptStart;
+
+            const totalTime = performance.now() - startTime;
+
+            return {
+                label,
+                size: text.length,
+                totalTime,
+                encryptTime,
+                decryptTime,
+                throughput: (text.length / 1024 / 1024) / (encryptTime / 1000) // MB/s
+            };
+        }
+
+        // Run encryption tests
+        window.runEncryptionTests = async function() {
+            addResult('🔐 Starting Encryption Performance Tests...', 'Testing AES-256-GCM with PBKDF2 key derivation', 'success');
+
+            const testSizes = [
+                { size: 100 * 1024, label: '100 KB' },
+                { size: 500 * 1024, label: '500 KB' },
+                { size: 1 * 1024 * 1024, label: '1 MB' },
+                { size: 2 * 1024 * 1024, label: '2 MB' },
+                { size: 5 * 1024 * 1024, label: '5 MB' }
+            ];
+
+            const results = [];
+
+            for (let i = 0; i < testSizes.length; i++) {
+                const { size, label } = testSizes[i];
+                updateProgress((i / testSizes.length) * 100, `Testing ${label}...`);
+
+                const text = generateText(size);
+                const result = await testEncryptionPerformance(text, label);
+                results.push(result);
+
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between tests
+            }
+
+            updateProgress(100, 'Encryption tests complete!');
+
+            // Display results in table
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File Size</th>
+                            <th>Encrypt Time</th>
+                            <th>Decrypt Time</th>
+                            <th>Total Time</th>
+                            <th>Throughput</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            results.forEach(r => {
+                const status = r.encryptTime < 3000 ? 'PASS' : r.encryptTime < 10000 ? 'WARN' : 'FAIL';
+                const statusClass = status === 'PASS' ? 'status-pass' : status === 'WARN' ? 'status-warn' : 'status-fail';
+
+                tableHTML += `
+                    <tr>
+                        <td>${r.label} (${formatBytes(r.size)})</td>
+                        <td>${formatTime(r.encryptTime)}</td>
+                        <td>${formatTime(r.decryptTime)}</td>
+                        <td>${formatTime(r.totalTime)}</td>
+                        <td>${r.throughput.toFixed(2)} MB/s</td>
+                        <td class="${statusClass}">${status}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += '</tbody></table>';
+
+            addResult('✅ Encryption Test Results', tableHTML, 'success');
+        };
+
+        // Memory tests
+        window.runMemoryTests = async function() {
+            if (!performance.memory) {
+                addResult('⚠️ Memory API Not Available', 'Performance.memory API is not available in this browser. Use Chrome with --enable-precise-memory-info flag.', 'warning');
+                return;
+            }
+
+            addResult('💾 Starting Memory Tests...', 'Measuring memory usage with large text content', 'success');
+
+            const initialMemory = performance.memory.usedJSHeapSize;
+
+            // Test large text allocation
+            const text = generateText(5 * 1024 * 1024); // 5MB
+            const afterAllocation = performance.memory.usedJSHeapSize;
+
+            // Clear and force GC (if available)
+            const clearedMemory = performance.memory.usedJSHeapSize;
+
+            const memoryUsed = afterAllocation - initialMemory;
+            const overhead = memoryUsed - (5 * 1024 * 1024);
+
+            let resultHTML = `
+                <div class="metric">
+                    <span class="metric-name">Initial Memory:</span>
+                    <span class="metric-value">${formatBytes(initialMemory)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">After 5MB Allocation:</span>
+                    <span class="metric-value">${formatBytes(afterAllocation)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Memory Used:</span>
+                    <span class="metric-value">${formatBytes(memoryUsed)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Overhead:</span>
+                    <span class="metric-value">${formatBytes(overhead)} (${((overhead / memoryUsed) * 100).toFixed(1)}%)</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Total JS Heap:</span>
+                    <span class="metric-value">${formatBytes(performance.memory.totalJSHeapSize)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Heap Limit:</span>
+                    <span class="metric-value">${formatBytes(performance.memory.jsHeapSizeLimit)}</span>
+                </div>
+            `;
+
+            addResult('✅ Memory Test Results', resultHTML, 'success');
+        };
+
+        // Render performance tests
+        window.runRenderTests = async function() {
+            addResult('🎨 Starting Render Performance Tests...', 'Measuring DOM manipulation and rendering speed', 'success');
+
+            const testContainer = document.createElement('div');
+            testContainer.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
+            document.body.appendChild(testContainer);
+
+            // Test 1: Large text rendering
+            const text = generateText(1 * 1024 * 1024); // 1MB
+            const lines = text.split('\n');
+
+            const renderStart = performance.now();
+            const pre = document.createElement('pre');
+            pre.textContent = text;
+            testContainer.appendChild(pre);
+            const renderTime = performance.now() - renderStart;
+
+            // Test 2: Incremental rendering
+            const incrementalStart = performance.now();
+            const div = document.createElement('div');
+            for (let i = 0; i < 1000; i++) {
+                const p = document.createElement('p');
+                p.textContent = lines[i] || 'Test line';
+                div.appendChild(p);
+            }
+            testContainer.appendChild(div);
+            const incrementalTime = performance.now() - incrementalStart;
+
+            // Cleanup
+            document.body.removeChild(testContainer);
+
+            let resultHTML = `
+                <div class="metric">
+                    <span class="metric-name">1MB Text Render:</span>
+                    <span class="metric-value">${formatTime(renderTime)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">1000 Elements Incremental:</span>
+                    <span class="metric-value">${formatTime(incrementalTime)}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-name">Lines Processed:</span>
+                    <span class="metric-value">${lines.length.toLocaleString()}</span>
+                </div>
+            `;
+
+            addResult('✅ Render Test Results', resultHTML, 'success');
+        };
+
+        // Run all tests
+        window.runAllTests = async function() {
+            clearResults();
+            await runEncryptionTests();
+            await runMemoryTests();
+            await runRenderTests();
+
+            addResult('🎉 All Tests Complete!', 'Check the results above for performance metrics.', 'success');
+        };
+
+        // Clear results
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('overall-progress').style.display = 'none';
+        };
+    </script>
+</body>
+</html>

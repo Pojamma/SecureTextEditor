@@ -318,7 +318,7 @@ export function validatePassword(password: string): {
  * Check if a file is encrypted
  */
 export function isEncrypted(data: any): data is EncryptedDocument {
-  return (
+  return !!(
     data &&
     typeof data === 'object' &&
     data.encrypted === true &&
