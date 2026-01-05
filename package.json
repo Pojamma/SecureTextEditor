@@ -1,8 +1,14 @@
 {
   "name": "securetexteditor",
-  "private": true,
-  "version": "0.1.0",
+  "private": false,
+  "version": "0.2.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Pojamma",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pojamma/SecureTextEditor.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build --mode production",

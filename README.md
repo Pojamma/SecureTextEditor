@@ -123,17 +123,46 @@ android/
 - **Strong encryption**: AES-256-GCM with 600,000 PBKDF2 iterations
 - **Memory security**: Sensitive data cleared from memory after use
 
-⚠️ **Important**: Lost passwords cannot be recovered. Keep passwords safe externally.
+⚠️ **CRITICAL WARNINGS**:
+- **Lost passwords CANNOT be recovered** - encrypted data will be permanently inaccessible
+- **This is NOT professionally audited security software** - use at your own risk
+- **Always maintain backups** - the developers are not responsible for data loss
+- **Read the [DISCLAIMER](DISCLAIMER.md)** before using this software
+
+## Important Legal Notices
+
+### Disclaimer
+
+**THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.** By using SecureTextEditor, you acknowledge and agree that:
+
+- You use this software entirely at your own risk
+- The developers are NOT liable for any data loss, damages, or security issues
+- You are solely responsible for backing up your data
+- Lost passwords result in permanent data loss
+- This software has not been professionally security audited
+
+**See [DISCLAIMER.md](DISCLAIMER.md) for complete terms.**
+
+### No Support Guarantee
+
+This is a personal project with no guaranteed support, updates, or maintenance. Use at your own risk.
 
 ## Documentation
 
 - [Design Specification](SecureTextEditor_Specification.md)
 - [Task Checklist](tasks.md)
 - [Development Guide](CLAUDE.md)
+- [**DISCLAIMER - READ BEFORE USE**](DISCLAIMER.md)
 
 ## License
 
-This is a personal project. For private use only.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+**Key Points:**
+- Free to use, modify, and distribute
+- Provided "AS IS" without warranty
+- No liability for damages or data loss
+- Must include license and copyright notice in distributions
 
 ## Recent Updates
 
