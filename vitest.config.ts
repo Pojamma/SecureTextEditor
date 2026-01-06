@@ -27,6 +27,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'capacitor-file-writer': path.resolve(__dirname, './src/tests/__mocks__/capacitor-file-writer.ts'),
     },
   },
 });
