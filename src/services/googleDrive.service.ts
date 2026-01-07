@@ -4,6 +4,8 @@
  * Handles Google Drive OAuth authentication and file operations
  * Supports both web and mobile (Capacitor) platforms
  *
+ * Uses Google Identity Services (GIS) - the modern OAuth library
+ *
  * IMPORTANT: You need to set up Google Cloud Console credentials:
  * 1. Go to https://console.cloud.google.com
  * 2. Create a new project or select existing
@@ -78,6 +80,19 @@ interface DriveFile {
   encrypted?: boolean;
 }
 
+// Extend window to include Google Identity Services types
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: any) => any;
+          revoke: (token: string, callback: () => void) => void;
+        };
+      };
+    };
+  }
+}
 
 // ============================================================================
 // STORAGE KEYS
@@ -85,7 +100,6 @@ interface DriveFile {
 
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'google_drive_auth_token',
-  REFRESH_TOKEN: 'google_drive_refresh_token',
   TOKEN_EXPIRES: 'google_drive_token_expires',
 };
 
@@ -95,9 +109,11 @@ const STORAGE_KEYS = {
 
 let gapiLoaded = false;
 let gapiInitialized = false;
+let gisLoaded = false;
+let tokenClient: any = null;
 
 /**
- * Load Google API Client library
+ * Load Google API Client library (for Drive API calls)
  */
 async function loadGapiClient(): Promise<void> {
   if (gapiLoaded) return;
@@ -115,7 +131,25 @@ async function loadGapiClient(): Promise<void> {
 }
 
 /**
- * Initialize Google API Client
+ * Load Google Identity Services library (for OAuth)
+ */
+async function loadGisClient(): Promise<void> {
+  if (gisLoaded) return;
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => {
+      gisLoaded = true;
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Initialize Google API Client (for Drive API)
  */
 async function initGapiClient(): Promise<void> {
   if (gapiInitialized) return;
@@ -123,13 +157,11 @@ async function initGapiClient(): Promise<void> {
   await loadGapiClient();
 
   return new Promise((resolve, reject) => {
-    gapi.load('client:auth2', async () => {
+    gapi.load('client', async () => {
       try {
         await gapi.client.init({
           apiKey: GOOGLE_CONFIG.web.apiKey,
-          clientId: GOOGLE_CONFIG.web.clientId,
           discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
-          scope: GOOGLE_CONFIG.scopes.join(' '),
         });
         gapiInitialized = true;
         resolve();
@@ -137,6 +169,21 @@ async function initGapiClient(): Promise<void> {
         reject(error);
       }
     });
+  });
+}
+
+/**
+ * Initialize Google Identity Services token client
+ */
+async function initTokenClient(): Promise<void> {
+  if (tokenClient) return;
+
+  await loadGisClient();
+
+  tokenClient = window.google!.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CONFIG.web.clientId,
+    scope: GOOGLE_CONFIG.scopes.join(' '),
+    callback: '', // Will be set during sign-in
   });
 }
 
@@ -159,10 +206,13 @@ export async function isAuthenticated(): Promise<boolean> {
     const expires = parseInt(expiresAt, 10);
 
     if (now >= expires) {
-      // Try to refresh token
-      const refreshed = await refreshAccessToken();
-      return refreshed;
+      // Token expired, need to re-authenticate
+      return false;
     }
+
+    // Set the token for gapi client
+    await initGapiClient();
+    gapi.client.setToken({ access_token: token });
 
     return true;
   } catch (error) {
@@ -192,29 +242,47 @@ export async function signIn(): Promise<boolean> {
 }
 
 /**
- * Sign in on web platform
+ * Sign in on web platform using Google Identity Services
  */
 async function signInWeb(): Promise<boolean> {
-  try {
-    await initGapiClient();
+  return new Promise(async (resolve, reject) => {
+    try {
+      await initGapiClient();
+      await initTokenClient();
 
-    const auth2 = gapi.auth2.getAuthInstance();
-    const user = await auth2.signIn();
-    const authResponse = user.getAuthResponse(true);
+      // Set callback for token response
+      tokenClient.callback = (response: any) => {
+        if (response.error) {
+          console.error('Token error:', response);
+          reject(new Error(response.error));
+          return;
+        }
 
-    // Store tokens
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authResponse.access_token);
-    localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, authResponse.expires_at.toString());
+        // Store access token and expiration
+        const expiresAt = Date.now() + (response.expires_in * 1000);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.access_token);
+        localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
 
-    if (authResponse.refresh_token) {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, authResponse.refresh_token);
+        // Set token for gapi client
+        gapi.client.setToken({ access_token: response.access_token });
+
+        resolve(true);
+      };
+
+      // Check if already have a valid token
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      if (token) {
+        // Request new token (user may need to consent)
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        // First time - request token
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+      }
+    } catch (error) {
+      console.error('Web sign in error:', error);
+      reject(error);
     }
-
-    return true;
-  } catch (error) {
-    console.error('Web sign in error:', error);
-    return false;
-  }
+  });
 }
 
 /**
@@ -231,45 +299,26 @@ async function signInAndroid(): Promise<boolean> {
  */
 export async function signOut(): Promise<void> {
   try {
-    const platform = Capacitor.getPlatform();
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
-    if (platform === 'web') {
-      await initGapiClient();
-      const auth2 = gapi.auth2.getAuthInstance();
-      await auth2.signOut();
+    // Revoke token if it exists
+    if (token && window.google?.accounts?.oauth2) {
+      window.google.accounts.oauth2.revoke(token, () => {
+        console.log('Token revoked');
+      });
     }
 
     // Clear stored tokens
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES);
+
+    // Clear gapi client token
+    if (gapi?.client) {
+      gapi.client.setToken(null);
+    }
   } catch (error) {
     console.error('Sign out error:', error);
     throw new Error('Failed to sign out from Google Drive');
-  }
-}
-
-/**
- * Refresh access token
- */
-async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    if (!refreshToken) return false;
-
-    // For web, gapi handles token refresh automatically
-    await initGapiClient();
-    const auth2 = gapi.auth2.getAuthInstance();
-    const user = auth2.currentUser.get();
-    const authResponse = await user.reloadAuthResponse();
-
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authResponse.access_token);
-    localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, authResponse.expires_at.toString());
-
-    return true;
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    return false;
   }
 }
 
@@ -283,6 +332,12 @@ async function refreshAccessToken(): Promise<boolean> {
 export async function listFiles(query?: string): Promise<DriveFile[]> {
   try {
     await initGapiClient();
+
+    // Ensure we have a valid token
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Not authenticated. Please sign in first.');
+    }
 
     const response = await gapi.client.drive.files.list({
       pageSize: 100,
@@ -314,6 +369,12 @@ export async function downloadFile(fileId: string): Promise<string> {
   try {
     await initGapiClient();
 
+    // Ensure we have a valid token
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Not authenticated. Please sign in first.');
+    }
+
     const response = await gapi.client.drive.files.get({
       fileId: fileId,
       alt: 'media',
@@ -337,6 +398,12 @@ export async function uploadFile(
   try {
     await initGapiClient();
 
+    // Ensure we have a valid token
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Not authenticated. Please sign in first.');
+    }
+
     const metadata = {
       name: filename,
       mimeType: mimeType,
@@ -346,10 +413,11 @@ export async function uploadFile(
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', new Blob([content], { type: mimeType }));
 
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)}`,
+        Authorization: `Bearer ${token}`,
       },
       body: form,
     });
@@ -369,10 +437,17 @@ export async function updateFile(fileId: string, content: string): Promise<void>
   try {
     await initGapiClient();
 
+    // Ensure we have a valid token
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Not authenticated. Please sign in first.');
+    }
+
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: content,
@@ -390,7 +465,13 @@ export async function deleteFile(fileId: string): Promise<void> {
   try {
     await initGapiClient();
 
-    await gapi.client.drive.files.remove({
+    // Ensure we have a valid token
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      throw new Error('Not authenticated. Please sign in first.');
+    }
+
+    await gapi.client.drive.files.delete({
       fileId: fileId,
     });
   } catch (error) {
