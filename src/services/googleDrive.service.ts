@@ -159,7 +159,9 @@ async function initGapiClient(): Promise<void> {
   return new Promise((resolve, reject) => {
     gapi.load('client', async () => {
       try {
-        await gapi.client.init({
+        // Initialize with only apiKey and discoveryDocs
+        // Auth is handled separately by GIS
+        await (gapi.client as any).init({
           apiKey: GOOGLE_CONFIG.web.apiKey,
           discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
         });
@@ -212,7 +214,7 @@ export async function isAuthenticated(): Promise<boolean> {
 
     // Set the token for gapi client
     await initGapiClient();
-    gapi.client.setToken({ access_token: token });
+    (gapi.client as any).setToken({ access_token: token });
 
     return true;
   } catch (error) {
@@ -264,7 +266,7 @@ async function signInWeb(): Promise<boolean> {
         localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
 
         // Set token for gapi client
-        gapi.client.setToken({ access_token: response.access_token });
+        (gapi.client as any).setToken({ access_token: response.access_token });
 
         resolve(true);
       };
@@ -314,7 +316,7 @@ export async function signOut(): Promise<void> {
 
     // Clear gapi client token
     if (gapi?.client) {
-      gapi.client.setToken(null);
+      (gapi.client as any).setToken(null);
     }
   } catch (error) {
     console.error('Sign out error:', error);
@@ -471,7 +473,8 @@ export async function deleteFile(fileId: string): Promise<void> {
       throw new Error('Not authenticated. Please sign in first.');
     }
 
-    await gapi.client.drive.files.delete({
+    // Note: gapi types use 'delete' but implementation might use 'remove'
+    await (gapi.client.drive.files as any).delete({
       fileId: fileId,
     });
   } catch (error) {
