@@ -11,7 +11,7 @@ import {
   binaryToBase64,
   base64ToBinary,
 } from '@/services/encryption.service';
-import type { PlainDocument, EncryptedDocument } from '@/types/document.types';
+import type { PlainDocument } from '@/types/document.types';
 
 describe('Encryption Service', () => {
   let samplePlainDocument: PlainDocument;
@@ -25,7 +25,6 @@ describe('Encryption Service', () => {
         filename: 'test.txt',
         created: new Date().toISOString(),
         modified: new Date().toISOString(),
-        size: 45,
       },
     };
   });
@@ -420,7 +419,6 @@ describe('Encryption Service', () => {
           filename: 'test.txt',
           created: new Date().toISOString(),
           modified: new Date().toISOString(),
-          size: 24,
         },
       };
 
@@ -475,7 +473,6 @@ describe('Encryption Service', () => {
           filename: 'empty.txt',
           created: new Date().toISOString(),
           modified: new Date().toISOString(),
-          size: 0,
         },
       };
 

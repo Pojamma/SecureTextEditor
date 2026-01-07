@@ -189,7 +189,7 @@ describe('Filesystem Service', () => {
     it('should read plain text file', async () => {
       const fileContent = 'Hello, world!';
       (Filesystem.readFile as Mock).mockResolvedValue({ data: fileContent });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(false);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(false);
 
       const result = await readFile('test.txt');
 
@@ -203,7 +203,7 @@ describe('Filesystem Service', () => {
     it('should read plain text with special characters', async () => {
       const content = 'Hello 🔐 测试 العربية';
       (Filesystem.readFile as Mock).mockResolvedValue({ data: content });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(false);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(false);
 
       const result = await readFile('unicode.txt');
 
@@ -225,7 +225,7 @@ describe('Filesystem Service', () => {
       (Filesystem.readFile as Mock).mockResolvedValue({
         data: JSON.stringify(plainDoc),
       });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(false);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(false);
 
       const result = await readFile('doc.txt');
 
@@ -252,7 +252,7 @@ describe('Filesystem Service', () => {
       (Filesystem.readFile as Mock).mockResolvedValue({
         data: JSON.stringify(encryptedDoc),
       });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(true);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(true);
 
       const result = await readFile('secret.txt');
 
@@ -540,7 +540,7 @@ describe('Filesystem Service', () => {
         publicStorage: 'granted',
       });
       (Filesystem.readFile as Mock).mockResolvedValue({ data: 'content' });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(false);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(false);
 
       await readFile('test.txt');
 
@@ -554,7 +554,7 @@ describe('Filesystem Service', () => {
         publicStorage: 'granted',
       });
       (Filesystem.readFile as Mock).mockResolvedValue({ data: 'content' });
-      (encryptionService.isEncrypted as Mock).mockReturnValue(false);
+      (encryptionService.isEncrypted as unknown as Mock).mockReturnValue(false);
 
       const result = await readFile('test.txt');
 
