@@ -11,7 +11,24 @@
  * 4. Create OAuth 2.0 credentials:
  *    - Web client ID for browser
  *    - Android client ID for mobile app
- * 5. Add authorized redirect URIs
+ * 5. Add authorized JavaScript origins and redirect URIs:
+ *
+ *    Authorized JavaScript origins (add all that apply):
+ *    - http://localhost:5173 (Vite dev server default)
+ *    - http://localhost:3000 (if running on port 3000)
+ *    - http://127.0.0.1:5173
+ *    - http://127.0.0.1:3000
+ *    - http://172.19.209.62:3000 (WSL2 IP - replace with your actual IP)
+ *    - Your production domain when deploying
+ *
+ *    Authorized redirect URIs (add all that apply):
+ *    - http://localhost:5173/auth/callback
+ *    - http://localhost:3000/auth/callback
+ *    - http://172.19.209.62:3000/auth/callback (WSL2 IP - replace with your actual IP)
+ *    - Your production callback URL
+ *
+ *    Note: WSL2 IP addresses may change after restart. Access via localhost when possible.
+ *
  * 6. Replace the placeholder credentials below
  */
 
@@ -20,12 +37,20 @@ import { Capacitor } from '@capacitor/core';
 // ============================================================================
 // CONFIGURATION - REPLACE WITH YOUR ACTUAL CREDENTIALS
 // ============================================================================
+//
+// IMPORTANT: In Google Cloud Console, you must add ALL origins/ports you'll use:
+// - Development: localhost:5173, localhost:3000, WSL2 IP:port
+// - Production: Your actual domain
+//
+// The redirectUri below should match your current dev server, but Google Cloud
+// Console needs ALL possible redirect URIs pre-registered.
+// ============================================================================
 
 const GOOGLE_CONFIG = {
   web: {
     clientId: '471557058540-fk6kl3p112vmq39h24fnaeonk2j9kitt.apps.googleusercontent.com',
     apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
-    redirectUri: 'http://localhost:5173/auth/callback', // Update for production
+    redirectUri: 'http://localhost:5173/auth/callback', // Change to match your dev server port
   },
   android: {
     clientId: '471557058540-u3c9fap63lraskt2nal067lnf1bmb8j5.apps.googleusercontent.com',
