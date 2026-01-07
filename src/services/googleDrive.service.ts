@@ -16,18 +16,18 @@
  *    Authorized JavaScript origins (add all that apply):
  *    - http://localhost:5173 (Vite dev server default)
  *    - http://localhost:3000 (if running on port 3000)
- *    - http://127.0.0.1:5173
- *    - http://127.0.0.1:3000
- *    - http://172.19.209.62:3000 (WSL2 IP - replace with your actual IP)
- *    - Your production domain when deploying
+ *    - http://localhost:4173 (Vite preview)
+ *    - Your production domain when deploying (e.g., https://yourdomain.com)
  *
  *    Authorized redirect URIs (add all that apply):
  *    - http://localhost:5173/auth/callback
  *    - http://localhost:3000/auth/callback
- *    - http://172.19.209.62:3000/auth/callback (WSL2 IP - replace with your actual IP)
- *    - Your production callback URL
+ *    - http://localhost:4173/auth/callback
+ *    - Your production callback URL (e.g., https://yourdomain.com/auth/callback)
  *
- *    Note: WSL2 IP addresses may change after restart. Access via localhost when possible.
+ *    IMPORTANT: Google OAuth does NOT allow raw IP addresses (like 172.19.209.62).
+ *    You MUST access the dev server via 'localhost' or a proper domain name.
+ *    In WSL2, always access as http://localhost:PORT from your Windows browser.
  *
  * 6. Replace the placeholder credentials below
  */
@@ -39,8 +39,10 @@ import { Capacitor } from '@capacitor/core';
 // ============================================================================
 //
 // IMPORTANT: In Google Cloud Console, you must add ALL origins/ports you'll use:
-// - Development: localhost:5173, localhost:3000, WSL2 IP:port
-// - Production: Your actual domain
+// - Development: http://localhost:5173, http://localhost:3000, etc.
+// - Production: https://yourdomain.com
+//
+// Google OAuth does NOT allow raw IP addresses - use localhost or proper domains only!
 //
 // The redirectUri below should match your current dev server, but Google Cloud
 // Console needs ALL possible redirect URIs pre-registered.
