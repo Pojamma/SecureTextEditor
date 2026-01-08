@@ -159,15 +159,23 @@ async function initGapiClient(): Promise<void> {
   return new Promise((resolve, reject) => {
     gapi.load('client', async () => {
       try {
-        // Initialize with only apiKey and discoveryDocs
-        // Auth is handled separately by GIS
-        await (gapi.client as any).init({
-          apiKey: GOOGLE_CONFIG.web.apiKey,
-          discoveryDocs: GOOGLE_CONFIG.discoveryDocs,
-        });
+        // Check if gapi.client exists
+        if (!gapi.client) {
+          console.error('[Google Drive] gapi.client is undefined');
+          reject(new Error('Google API client not available'));
+          return;
+        }
+
+        // Modern initialization: set API key and load Drive API
+        // This is compatible with Google Identity Services (GIS)
+        gapi.client.setApiKey(GOOGLE_CONFIG.web.apiKey);
+        await gapi.client.load('drive', 'v3');
+
         gapiInitialized = true;
+        console.log('[Google Drive] API client initialized successfully');
         resolve();
       } catch (error) {
+        console.error('[Google Drive] Init error:', error);
         reject(error);
       }
     });
