@@ -56,9 +56,9 @@ const GOOGLE_CONFIG = {
     apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
     redirectUri: 'http://localhost:5173/auth/callback', // Change to match your dev server port
   },
-  // Desktop/Electron configuration - uses loopback for OAuth
+  // Desktop/Electron configuration - uses Desktop app OAuth client
   electron: {
-    clientId: '471557058540-fk6kl3p112vmq39h24fnaeonk2j9kitt.apps.googleusercontent.com',
+    clientId: '471557058540-dn3cgc4qrbo88ud4vt9biq2om0aiaa6k.apps.googleusercontent.com', // Desktop app client
     apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
     redirectUri: 'http://localhost', // Loopback for desktop apps
   },
