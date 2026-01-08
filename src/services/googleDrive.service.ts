@@ -159,12 +159,23 @@ async function initGapiClient(): Promise<void> {
   return new Promise((resolve, reject) => {
     gapi.load('client', async () => {
       try {
-        // Check if gapi.client exists
+        // Wait for gapi.client to be available (especially important in Electron)
+        let retries = 0;
+        const maxRetries = 10;
+
+        while (!gapi.client && retries < maxRetries) {
+          console.log(`[Google Drive] Waiting for gapi.client... (attempt ${retries + 1}/${maxRetries})`);
+          await new Promise(r => setTimeout(r, 200)); // Wait 200ms
+          retries++;
+        }
+
         if (!gapi.client) {
-          console.error('[Google Drive] gapi.client is undefined');
-          reject(new Error('Google API client not available'));
+          console.error('[Google Drive] gapi.client is undefined after retries');
+          reject(new Error('Google API client not available in this environment'));
           return;
         }
+
+        console.log('[Google Drive] gapi.client is now available');
 
         // Modern initialization: set API key and load Drive API
         // This is compatible with Google Identity Services (GIS)
