@@ -19,7 +19,9 @@ export const useKeyboard = () => {
 
   useEffect(() => {
     // Only set up keyboard listeners on native platforms
-    if (!Capacitor.isNativePlatform()) {
+    // Electron and web should not use keyboard plugin
+    const platform = Capacitor.getPlatform();
+    if (platform === 'web' || platform === 'electron' || !Capacitor.isNativePlatform()) {
       return;
     }
 
@@ -28,21 +30,26 @@ export const useKeyboard = () => {
 
     // Set up listeners
     const setupListeners = async () => {
-      // Listen for keyboard show event
-      showListener = await Keyboard.addListener('keyboardWillShow', (info: KeyboardInfo) => {
-        setKeyboardState({
-          isVisible: true,
-          height: info.keyboardHeight,
+      try {
+        // Listen for keyboard show event
+        showListener = await Keyboard.addListener('keyboardWillShow', (info: KeyboardInfo) => {
+          setKeyboardState({
+            isVisible: true,
+            height: info.keyboardHeight,
+          });
         });
-      });
 
-      // Listen for keyboard hide event
-      hideListener = await Keyboard.addListener('keyboardWillHide', () => {
-        setKeyboardState({
-          isVisible: false,
-          height: 0,
+        // Listen for keyboard hide event
+        hideListener = await Keyboard.addListener('keyboardWillHide', () => {
+          setKeyboardState({
+            isVisible: false,
+            height: 0,
+          });
         });
-      });
+      } catch (error) {
+        // Keyboard plugin not available on this platform - silently ignore
+        console.log('Keyboard plugin not available on platform:', platform);
+      }
     };
 
     setupListeners();

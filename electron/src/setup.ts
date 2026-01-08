@@ -224,8 +224,8 @@ export function setupContentSecurityPolicy(customScheme: string): void {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           electronIsDev
-            ? `default-src ${customScheme}://* 'unsafe-inline' devtools://* 'unsafe-eval' data:`
-            : `default-src ${customScheme}://* 'unsafe-inline' data:`,
+            ? `default-src ${customScheme}://* 'unsafe-inline' devtools://* 'unsafe-eval' data:; script-src ${customScheme}://* 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com; connect-src ${customScheme}://* https://apis.google.com https://accounts.google.com https://www.googleapis.com https://oauth2.googleapis.com data:`
+            : `default-src ${customScheme}://* 'unsafe-inline' data:; script-src ${customScheme}://* 'unsafe-inline' https://apis.google.com https://accounts.google.com; connect-src ${customScheme}://* https://apis.google.com https://accounts.google.com https://www.googleapis.com https://oauth2.googleapis.com data:`,
         ],
       },
     });
