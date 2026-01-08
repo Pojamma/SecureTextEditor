@@ -230,7 +230,8 @@ export async function signIn(): Promise<boolean> {
   try {
     const platform = Capacitor.getPlatform();
 
-    if (platform === 'web') {
+    // Electron is a web environment (uses Chromium), so treat it like web
+    if (platform === 'web' || platform === 'electron') {
       return await signInWeb();
     } else if (platform === 'android') {
       return await signInAndroid();
