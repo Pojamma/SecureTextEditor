@@ -168,8 +168,8 @@ async function initGapiClient(): Promise<void> {
 
         // Modern initialization: set API key and load Drive API
         // This is compatible with Google Identity Services (GIS)
-        gapi.client.setApiKey(GOOGLE_CONFIG.web.apiKey);
-        await gapi.client.load('drive', 'v3');
+        (gapi.client as any).setApiKey(GOOGLE_CONFIG.web.apiKey);
+        await (gapi.client as any).load('drive', 'v3');
 
         gapiInitialized = true;
         console.log('[Google Drive] API client initialized successfully');
