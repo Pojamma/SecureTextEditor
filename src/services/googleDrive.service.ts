@@ -56,6 +56,12 @@ const GOOGLE_CONFIG = {
     apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
     redirectUri: 'http://localhost:5173/auth/callback', // Change to match your dev server port
   },
+  // Desktop/Electron configuration - uses loopback for OAuth
+  electron: {
+    clientId: '471557058540-fk6kl3p112vmq39h24fnaeonk2j9kitt.apps.googleusercontent.com',
+    apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
+    redirectUri: 'http://localhost', // Loopback for desktop apps
+  },
   android: {
     clientId: '471557058540-u3c9fap63lraskt2nal067lnf1bmb8j5.apps.googleusercontent.com',
     redirectUri: 'com.pojamma.securetexteditor:/oauth2callback',
@@ -136,10 +142,17 @@ async function initTokenClient(): Promise<void> {
 
   await loadGisClient();
 
+  const platform = Capacitor.getPlatform();
+  const config = platform === 'electron' ? GOOGLE_CONFIG.electron : GOOGLE_CONFIG.web;
+
+  console.log(`[Google Drive] Initializing OAuth for platform: ${platform}`);
+
   tokenClient = window.google!.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CONFIG.web.clientId,
+    client_id: config.clientId,
     scope: GOOGLE_CONFIG.scopes.join(' '),
     callback: '', // Will be set during sign-in
+    // For Electron/desktop apps, use UX mode 'popup' to open OAuth in new window
+    ux_mode: platform === 'electron' ? 'popup' : 'popup',
   });
 }
 
