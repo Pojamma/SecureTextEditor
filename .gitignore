@@ -7,6 +7,12 @@
 !.env.development
 !.env.production
 
+# Google Drive credentials (never commit)
+*credentials*.json
+*client_secret*.json
+*access*codes*.txt
+Google*Drive*access*.txt
+
 # Dependencies
 node_modules/
 package-lock.json

@@ -6,12 +6,20 @@
  *
  * Uses Google Identity Services (GIS) - the modern OAuth library
  *
+ * CONFIGURATION: Google credentials are stored in .env file
+ * Required environment variables:
+ *   - VITE_GOOGLE_API_KEY
+ *   - VITE_GOOGLE_WEB_CLIENT_ID
+ *   - VITE_GOOGLE_ELECTRON_CLIENT_ID
+ *   - VITE_GOOGLE_ANDROID_CLIENT_ID
+ *
  * IMPORTANT: You need to set up Google Cloud Console credentials:
  * 1. Go to https://console.cloud.google.com
  * 2. Create a new project or select existing
  * 3. Enable Google Drive API
  * 4. Create OAuth 2.0 credentials:
  *    - Web client ID for browser
+ *    - Desktop app client ID for Electron
  *    - Android client ID for mobile app
  * 5. Add authorized JavaScript origins and redirect URIs:
  *
@@ -25,19 +33,20 @@
  *    - http://localhost:5173/auth/callback
  *    - http://localhost:3000/auth/callback
  *    - http://localhost:4173/auth/callback
+ *    - http://localhost (for desktop/Electron apps)
  *    - Your production callback URL (e.g., https://yourdomain.com/auth/callback)
  *
  *    IMPORTANT: Google OAuth does NOT allow raw IP addresses (like 172.19.209.62).
  *    You MUST access the dev server via 'localhost' or a proper domain name.
  *    In WSL2, always access as http://localhost:PORT from your Windows browser.
  *
- * 6. Replace the placeholder credentials below
+ * 6. Add credentials to .env file (NEVER commit .env to git!)
  */
 
 import { Capacitor } from '@capacitor/core';
 
 // ============================================================================
-// CONFIGURATION - REPLACE WITH YOUR ACTUAL CREDENTIALS
+// CONFIGURATION - Loaded from environment variables (.env file)
 // ============================================================================
 //
 // IMPORTANT: In Google Cloud Console, you must add ALL origins/ports you'll use:
@@ -52,18 +61,18 @@ import { Capacitor } from '@capacitor/core';
 
 const GOOGLE_CONFIG = {
   web: {
-    clientId: '471557058540-fk6kl3p112vmq39h24fnaeonk2j9kitt.apps.googleusercontent.com',
-    apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
+    clientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
+    apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
     redirectUri: 'http://localhost:5173/auth/callback', // Change to match your dev server port
   },
   // Desktop/Electron configuration - uses Desktop app OAuth client
   electron: {
-    clientId: '471557058540-dn3cgc4qrbo88ud4vt9biq2om0aiaa6k.apps.googleusercontent.com', // Desktop app client
-    apiKey: 'AIzaSyDMXX_Mfv2b4ff3klfp6zGlJAWBcteE72k',
+    clientId: import.meta.env.VITE_GOOGLE_ELECTRON_CLIENT_ID, // Desktop app client
+    apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
     redirectUri: 'http://localhost', // Loopback for desktop apps
   },
   android: {
-    clientId: '471557058540-u3c9fap63lraskt2nal067lnf1bmb8j5.apps.googleusercontent.com',
+    clientId: import.meta.env.VITE_GOOGLE_ANDROID_CLIENT_ID,
     redirectUri: 'com.pojamma.securetexteditor:/oauth2callback',
   },
   scopes: [
