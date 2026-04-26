@@ -9,6 +9,7 @@ import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Filesystem } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { FileWriter } from 'capacitor-file-writer';
+import { logger } from '@/constants/app';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit
 
@@ -43,7 +44,7 @@ export async function pickExternalFile(): Promise<{
       const size = result.content.length;
       if (size > MAX_FILE_SIZE) {
         const sizeInMB = (size / 1024 / 1024).toFixed(2);
-        console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
+        logger.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
       // Validate that it's text content (skip check for .enc files and encrypted files)
@@ -56,11 +57,11 @@ export async function pickExternalFile(): Promise<{
           if (!isBinaryEncrypted(result.content)) {
             throw new Error('This file appears to be a binary file. Please select a text file.');
           }
-          console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
+          logger.log('[ExternalFS] Detected binary encrypted file without .enc extension');
         }
       }
 
-      console.log('[ExternalFS] Document picked on Electron:', result.uri);
+      logger.log('[ExternalFS] Document picked on Electron:', result.uri);
 
       return {
         uri: result.uri,
@@ -86,7 +87,7 @@ export async function pickExternalFile(): Promise<{
       const size = result.content.length;
       if (size > MAX_FILE_SIZE) {
         const sizeInMB = (size / 1024 / 1024).toFixed(2);
-        console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
+        logger.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
       }
 
       // Validate that it's text content (skip check for .enc files and encrypted files)
@@ -99,11 +100,11 @@ export async function pickExternalFile(): Promise<{
           if (!isBinaryEncrypted(result.content)) {
             throw new Error('This file appears to be a binary file. Please select a text file.');
           }
-          console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
+          logger.log('[ExternalFS] Detected binary encrypted file without .enc extension');
         }
       }
 
-      console.log('[ExternalFS] Document picked with write permissions:', result.uri);
+      logger.log('[ExternalFS] Document picked with write permissions:', result.uri);
 
       return {
         uri: result.uri,
@@ -136,7 +137,7 @@ export async function pickExternalFile(): Promise<{
   const size = file.size || 0;
   if (size > MAX_FILE_SIZE) {
     const sizeInMB = (size / 1024 / 1024).toFixed(2);
-    console.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
+    logger.warn(`Large file selected: ${sizeInMB}MB. This may impact performance.`);
   }
 
   // Decode base64 content to string
@@ -157,7 +158,7 @@ export async function pickExternalFile(): Promise<{
       if (!isBinaryEncrypted(content)) {
         throw new Error('This file appears to be a binary file. Please select a text file.');
       }
-      console.log('[ExternalFS] Detected binary encrypted file without .enc extension');
+      logger.log('[ExternalFS] Detected binary encrypted file without .enc extension');
     }
   }
 
@@ -195,30 +196,30 @@ export async function checkExternalFileAccess(uri: string): Promise<boolean> {
  */
 export async function saveToExternalUri(uri: string, content: string, isBinary: boolean = false): Promise<void> {
   const platform = Capacitor.getPlatform();
-  console.log('[ExternalFS] Platform detected:', platform);
-  console.log('[ExternalFS] URI:', uri);
-  console.log('[ExternalFS] Binary mode:', isBinary);
+  logger.log('[ExternalFS] Platform detected:', platform);
+  logger.log('[ExternalFS] URI:', uri);
+  logger.log('[ExternalFS] Binary mode:', isBinary);
 
   if (platform === 'android' && uri.startsWith('content://')) {
     // Use native plugin for Android content:// URIs
-    console.log('[ExternalFS] Calling FileWriter.writeToUri for Android');
+    logger.log('[ExternalFS] Calling FileWriter.writeToUri for Android');
     try {
       const result = await FileWriter.writeToUri({ uri, content, isBinary });
-      console.log('[ExternalFS] Write successful:', result);
+      logger.log('[ExternalFS] Write successful:', result);
     } catch (error) {
-      console.error('[ExternalFS] Write failed:', error);
+      logger.error('[ExternalFS] Write failed:', error);
       throw new Error(
         `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   } else if (platform === 'electron') {
     // Use FileWriter plugin for Electron (writes via IPC to main process)
-    console.log('[ExternalFS] Calling FileWriter.writeToUri for Electron');
+    logger.log('[ExternalFS] Calling FileWriter.writeToUri for Electron');
     try {
       const result = await FileWriter.writeToUri({ uri, content, isBinary });
-      console.log('[ExternalFS] Write successful:', result);
+      logger.log('[ExternalFS] Write successful:', result);
     } catch (error) {
-      console.error('[ExternalFS] Write failed:', error);
+      logger.error('[ExternalFS] Write failed:', error);
       throw new Error(
         `Failed to write to file: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -256,8 +257,8 @@ export async function saveAsToExternalDevice(
   }
 
   try {
-    console.log('[ExternalFS] Creating new document:', filename);
-    console.log('[ExternalFS] Binary mode:', isBinary);
+    logger.log('[ExternalFS] Creating new document:', filename);
+    logger.log('[ExternalFS] Binary mode:', isBinary);
 
     const result = await FileWriter.createDocument({
       filename,
@@ -266,7 +267,7 @@ export async function saveAsToExternalDevice(
       mimeType: isBinary ? 'application/octet-stream' : 'text/plain',
     });
 
-    console.log('[ExternalFS] Document created:', result.uri);
+    logger.log('[ExternalFS] Document created:', result.uri);
 
     return {
       uri: result.uri,

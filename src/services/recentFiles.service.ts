@@ -4,6 +4,8 @@
  * Separate from session documents - tracks files even after tabs are closed
  */
 
+import { logger } from '@/constants/app';
+
 export interface RecentFileEntry {
   filename: string;
   path: string;
@@ -45,9 +47,9 @@ export class RecentFilesService {
       const trimmed = updated.slice(0, maxRecent);
 
       localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(trimmed));
-      console.log('Added to recent files:', newEntry.filename);
+      logger.log('Added to recent files:', newEntry.filename);
     } catch (error) {
-      console.error('Failed to add recent file:', error);
+      logger.error('Failed to add recent file:', error);
     }
   }
 
@@ -63,7 +65,7 @@ export class RecentFilesService {
 
       // Validate structure
       if (!Array.isArray(files)) {
-        console.warn('Invalid recent files data structure');
+        logger.warn('Invalid recent files data structure');
         this.clearRecentFiles();
         return [];
       }
@@ -78,7 +80,7 @@ export class RecentFilesService {
 
       return files;
     } catch (error) {
-      console.error('Failed to load recent files:', error);
+      logger.error('Failed to load recent files:', error);
       return [];
     }
   }
@@ -89,9 +91,9 @@ export class RecentFilesService {
   static clearRecentFiles(): void {
     try {
       localStorage.removeItem(RECENT_FILES_KEY);
-      console.log('Recent files cleared');
+      logger.log('Recent files cleared');
     } catch (error) {
-      console.error('Failed to clear recent files:', error);
+      logger.error('Failed to clear recent files:', error);
     }
   }
 
@@ -109,9 +111,9 @@ export class RecentFilesService {
       });
 
       localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(filtered));
-      console.log('Removed from recent files:', path);
+      logger.log('Removed from recent files:', path);
     } catch (error) {
-      console.error('Failed to remove recent file:', error);
+      logger.error('Failed to remove recent file:', error);
     }
   }
 
@@ -130,7 +132,7 @@ export class RecentFilesService {
         }
       }
     } catch (error) {
-      console.error('Failed to get maxRecentFiles setting:', error);
+      logger.error('Failed to get maxRecentFiles setting:', error);
     }
     return DEFAULT_MAX_RECENT;
   }
@@ -145,10 +147,10 @@ export class RecentFilesService {
       if (recentFiles.length > maxRecent) {
         const trimmed = recentFiles.slice(0, maxRecent);
         localStorage.setItem(RECENT_FILES_KEY, JSON.stringify(trimmed));
-        console.log(`Trimmed recent files to ${maxRecent}`);
+        logger.log(`Trimmed recent files to ${maxRecent}`);
       }
     } catch (error) {
-      console.error('Failed to apply max recent files:', error);
+      logger.error('Failed to apply max recent files:', error);
     }
   }
 }

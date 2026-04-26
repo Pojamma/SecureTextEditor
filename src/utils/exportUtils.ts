@@ -4,6 +4,7 @@
 
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '@/constants/app';
 
 /**
  * Download a file to the user's device
@@ -98,7 +99,7 @@ export async function shareDocument(filename: string, content: string): Promise<
       await copyToClipboard(content, false);
       return true;
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      logger.error('Failed to copy to clipboard:', error);
       return false;
     }
   }
@@ -113,7 +114,7 @@ export async function shareDocument(filename: string, content: string): Promise<
     return true;
   } catch (error) {
     // User cancelled or sharing not available
-    console.log('Share cancelled or not available:', error);
+    logger.log('Share cancelled or not available:', error);
     return false;
   }
 }
@@ -156,6 +157,6 @@ export async function clearClipboard(): Promise<void> {
     }
   } catch (error) {
     // Silently fail if clipboard clearing fails
-    console.warn('Failed to clear clipboard:', error);
+    logger.warn('Failed to clear clipboard:', error);
   }
 }

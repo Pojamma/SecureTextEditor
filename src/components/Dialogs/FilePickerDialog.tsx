@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { listFiles, readFile, deleteFile, renameFile, copyFile, toggleFileEncryption } from '@/services/filesystem.service';
+import { logger } from '@/constants/app';
 import './FilePickerDialog.css';
 
 export interface FilePickerDialogProps {
@@ -68,7 +69,7 @@ export const FilePickerDialog: React.FC<FilePickerDialogProps> = ({
       setFiles(fileInfos);
     } catch (err) {
       setError('Failed to load files');
-      console.error('Error loading files:', err);
+      logger.error('Error loading files:', err);
     } finally {
       setLoading(false);
     }

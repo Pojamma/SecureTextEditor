@@ -20,6 +20,7 @@ import { encryptDocument, decryptDocument, isEncrypted, encryptToBinary, decrypt
 import { generateId, formatDate } from '@/utils/helpers';
 import { pickExternalFile, checkExternalFileAccess as checkExternalUri, saveToExternalUri, saveAsToExternalDevice } from './externalFilesystem.service';
 import { RecentFilesService } from './recentFiles.service';
+import { logger } from '@/constants/app';
 
 // Re-export for convenience
 export { checkExternalUri as checkExternalFileAccess };
@@ -45,7 +46,7 @@ async function checkPermissions(): Promise<boolean> {
     const requested = await Filesystem.requestPermissions();
     return requested.publicStorage === 'granted';
   } catch (error) {
-    console.error('Permission check failed:', error);
+    logger.error('Permission check failed:', error);
     return false;
   }
 }
@@ -167,7 +168,7 @@ export async function readFile(
       };
     }
   } catch (error) {
-    console.error('Error reading file:', error);
+    logger.error('Error reading file:', error);
     throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -209,7 +210,7 @@ export async function decryptFile(
 
     return document;
   } catch (error) {
-    console.error('Decryption error:', error);
+    logger.error('Decryption error:', error);
     throw new Error('Failed to decrypt file. Wrong password or corrupted file.');
   }
 }
@@ -233,7 +234,7 @@ export async function saveFile(
     const platform = Capacitor.getPlatform();
     const directory = getDirectory();
 
-    console.log('[FS] Saving file:', {
+    logger.log('[FS] Saving file:', {
       path,
       platform,
       directory,
@@ -243,7 +244,7 @@ export async function saveFile(
 
     if (document.encrypted && password) {
       // Encrypt and save
-      console.log('[FS] Encrypting document before save');
+      logger.log('[FS] Encrypting document before save');
       const plainDoc: PlainDocument = {
         content: document.content,
         metadata: {
@@ -254,7 +255,7 @@ export async function saveFile(
 
       const encryptedDoc = await encryptDocument(plainDoc, password);
       content = JSON.stringify(encryptedDoc, null, 2);
-      console.log('[FS] Document encrypted, content length:', content.length);
+      logger.log('[FS] Document encrypted, content length:', content.length);
     } else if (document.encrypted && !password) {
       throw new Error('Password required to save encrypted document');
     } else {
@@ -267,7 +268,7 @@ export async function saveFile(
         },
       };
       content = JSON.stringify(plainDoc, null, 2);
-      console.log('[FS] Saving plain document, content length:', content.length);
+      logger.log('[FS] Saving plain document, content length:', content.length);
     }
 
     await Filesystem.writeFile({
@@ -278,7 +279,7 @@ export async function saveFile(
       recursive: true, // Create parent directories if needed
     });
 
-    console.log('[FS] File saved successfully to:', path);
+    logger.log('[FS] File saved successfully to:', path);
 
     // Add to recent files after successful save
     RecentFilesService.addRecentFile({
@@ -287,7 +288,7 @@ export async function saveFile(
       source: 'local',
     });
   } catch (error) {
-    console.error('[FS] Error saving file:', error);
+    logger.error('[FS] Error saving file:', error);
     throw new Error(`Failed to save file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -356,7 +357,7 @@ export async function saveFileAs(
 
     return newPath;
   } catch (error) {
-    console.error('Error saving file:', error);
+    logger.error('Error saving file:', error);
     throw new Error(`Failed to save file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -390,7 +391,7 @@ export async function listFiles(): Promise<string[]> {
       .filter((file) => !file.name.startsWith('.'))
       .map((file) => file.name);
   } catch (error) {
-    console.error('Error listing files:', error);
+    logger.error('Error listing files:', error);
     return [];
   }
 }
@@ -405,7 +406,7 @@ export async function deleteFile(path: string): Promise<void> {
       directory: getDirectory(),
     });
   } catch (error) {
-    console.error('Error deleting file:', error);
+    logger.error('Error deleting file:', error);
     throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -447,7 +448,7 @@ export async function renameFile(oldPath: string, newFilename: string): Promise<
     // Delete old file
     await deleteFile(oldPath);
   } catch (error) {
-    console.error('Error renaming file:', error);
+    logger.error('Error renaming file:', error);
     throw new Error(`Failed to rename file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -486,7 +487,7 @@ export async function copyFile(sourcePath: string, newFilename: string): Promise
       recursive: true,
     });
   } catch (error) {
-    console.error('Error copying file:', error);
+    logger.error('Error copying file:', error);
     throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -557,7 +558,7 @@ export async function toggleFileEncryption(
       throw new Error('File is already in the requested encryption state');
     }
   } catch (error) {
-    console.error('Error toggling file encryption:', error);
+    logger.error('Error toggling file encryption:', error);
     throw new Error(`Failed to toggle encryption: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -574,7 +575,7 @@ export async function readExternalFile(): Promise<{
   try {
     const fileData = await pickExternalFile();
 
-    console.log('[FS] External file picked:', {
+    logger.log('[FS] External file picked:', {
       filename: fileData.filename,
       contentLength: fileData.content.length,
       isBinary: fileData.isBinary,
@@ -582,7 +583,7 @@ export async function readExternalFile(): Promise<{
 
     // Check if this is a binary encrypted file (with or without .enc extension)
     if (isBinaryEncrypted(fileData.content)) {
-      console.log('[FS] Binary encrypted file detected');
+      logger.log('[FS] Binary encrypted file detected');
       return {
         document: {
           id: generateId(),
@@ -610,18 +611,18 @@ export async function readExternalFile(): Promise<{
     let parsedData;
     try {
       parsedData = JSON.parse(fileData.content);
-      console.log('[FS] Parsed JSON successfully');
+      logger.log('[FS] Parsed JSON successfully');
     } catch (error) {
-      console.log('[FS] Not JSON format, treating as plain text');
+      logger.log('[FS] Not JSON format, treating as plain text');
       parsedData = null;
     }
 
     // Check if file is encrypted (legacy JSON format)
     const isEncryptedFile = parsedData && isEncrypted(parsedData);
-    console.log('[FS] Is encrypted file (JSON format):', isEncryptedFile);
+    logger.log('[FS] Is encrypted file (JSON format):', isEncryptedFile);
 
     if (isEncryptedFile) {
-      console.log('[FS] Returning encrypted file (legacy JSON format), will prompt for password');
+      logger.log('[FS] Returning encrypted file (legacy JSON format), will prompt for password');
       return {
         document: {
           id: generateId(),
@@ -704,7 +705,7 @@ export async function readExternalFile(): Promise<{
       };
     }
   } catch (error) {
-    console.error('Error reading external file:', error);
+    logger.error('Error reading external file:', error);
     throw new Error(
       `Failed to open file from device: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -727,11 +728,11 @@ export async function decryptExternalFile(
     // Check if this is binary format (base64 string) or JSON format
     if (typeof encryptedData === 'string') {
       // Binary format - decrypt from base64
-      console.log('[FS] Decrypting binary format');
+      logger.log('[FS] Decrypting binary format');
       content = await decryptFromBinary(encryptedData, password);
     } else {
       // Legacy JSON format
-      console.log('[FS] Decrypting JSON format (legacy)');
+      logger.log('[FS] Decrypting JSON format (legacy)');
       const plainDoc = await decryptDocument(encryptedData, password);
       content = plainDoc.content;
     }
@@ -764,7 +765,7 @@ export async function decryptExternalFile(
 
     return document;
   } catch (error) {
-    console.error('Decryption error:', error);
+    logger.error('Decryption error:', error);
     throw new Error('Failed to decrypt file. Wrong password or corrupted file.');
   }
 }
@@ -790,7 +791,7 @@ export async function saveExternalFile(document: OpenDocument, password?: string
 
     if (document.encrypted && password) {
       // Encrypt and save as binary format
-      console.log('[FS] Encrypting to binary format');
+      logger.log('[FS] Encrypting to binary format');
       content = await encryptToBinary(document.content, password);
       isBinary = true;
 
@@ -799,13 +800,13 @@ export async function saveExternalFile(document: OpenDocument, password?: string
         needsRename = true;
         // Append .enc to filename (keep original extension)
         newFilename = document.metadata.filename + '.enc';
-        console.log(`[FS] Renaming ${document.metadata.filename} → ${newFilename}`);
+        logger.log(`[FS] Renaming ${document.metadata.filename} → ${newFilename}`);
       }
     } else if (document.encrypted && !password) {
       throw new Error('Password required to save encrypted document');
     } else {
       // Save as plain text (restore original format)
-      console.log('[FS] Saving as plain text');
+      logger.log('[FS] Saving as plain text');
       content = document.content;
       isBinary = false;
 
@@ -818,7 +819,7 @@ export async function saveExternalFile(document: OpenDocument, password?: string
         if (!newFilename.includes('.')) {
           newFilename = newFilename + '.txt';
         }
-        console.log(`[FS] Renaming ${document.metadata.filename} → ${newFilename}`);
+        logger.log(`[FS] Renaming ${document.metadata.filename} → ${newFilename}`);
       }
     }
 
@@ -850,7 +851,7 @@ export async function saveExternalFile(document: OpenDocument, password?: string
       return {};
     }
   } catch (error) {
-    console.error('Error saving external file:', error);
+    logger.error('Error saving external file:', error);
     throw new Error(
       `Failed to save file: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -872,8 +873,8 @@ async function renameExternalFile(
   // The actual file renaming should be done via the native file system
   // which requires platform-specific implementation
 
-  console.warn('[FS] File renaming not yet fully implemented for external files');
-  console.warn('[FS] Saving to same location with new content, but filename not changed');
+  logger.warn('[FS] File renaming not yet fully implemented for external files');
+  logger.warn('[FS] Saving to same location with new content, but filename not changed');
   await saveToExternalUri(oldUri, content, isBinary);
 
   // TODO: Implement actual file renaming:
@@ -917,7 +918,7 @@ export async function saveAsToDevice(
 
     // If password provided, encrypt the document
     if (password) {
-      console.log('[FS] Encrypting document for save as to device');
+      logger.log('[FS] Encrypting document for save as to device');
       content = await encryptToBinary(document.content, password);
       isBinary = true;
 
@@ -928,7 +929,7 @@ export async function saveAsToDevice(
       }
     } else {
       // Save as plain text
-      console.log('[FS] Saving plain document to device');
+      logger.log('[FS] Saving plain document to device');
       content = document.content;
 
       // Remove .enc extension if present
@@ -940,11 +941,11 @@ export async function saveAsToDevice(
     // Use external filesystem service to create the document
     const result = await saveAsToExternalDevice(filename, content, isBinary);
 
-    console.log('[FS] Document saved to device:', result.uri);
+    logger.log('[FS] Document saved to device:', result.uri);
 
     return result;
   } catch (error) {
-    console.error('[FS] Failed to save as to device:', error);
+    logger.error('[FS] Failed to save as to device:', error);
     throw new Error(
       `Failed to save to device: ${error instanceof Error ? error.message : 'Unknown error'}`
     );

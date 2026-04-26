@@ -3,6 +3,7 @@ import { useDocumentStore } from '@/stores/documentStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PasswordDialog } from '@/components/Dialogs/PasswordDialog';
 import { encryptDocument, decryptFromBinary, isBinaryEncrypted } from '@/services/encryption.service';
+import { logger } from '@/constants/app';
 import { PlainDocument } from '@/types/document.types';
 
 export const SecurityMenu: React.FC = () => {
@@ -109,7 +110,7 @@ export const SecurityMenu: React.FC = () => {
         closeAllMenus();
       }
     } catch (error) {
-      console.error('Encryption/Decryption error:', error);
+      logger.error('Encryption/Decryption error:', error);
       const operation = dialogMode === 'encrypt' ? 'encrypt' : 'decrypt';
       showNotification(
         error instanceof Error ? error.message : `Failed to ${operation} document`,

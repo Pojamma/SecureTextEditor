@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { listFiles } from '@/services/googleDrive.service';
+import { logger } from '@/constants/app';
 import './DriveFilePickerDialog.css';
 
 interface DriveFile {
@@ -38,7 +39,7 @@ export const DriveFilePickerDialog: React.FC<DriveFilePickerDialogProps> = ({
       setFiles(fileList);
     } catch (err) {
       setError('Failed to load Google Drive files. Make sure you are signed in.');
-      console.error('Error loading Drive files:', err);
+      logger.error('Error loading Drive files:', err);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUIStore } from '@/stores/uiStore';
+import { logger } from '@/constants/app';
 
 export const EditMenu: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
@@ -10,7 +11,7 @@ export const EditMenu: React.FC = () => {
       action();
       closeAllMenus();
     } else {
-      console.warn(`${actionName} action not available`);
+      logger.warn(`${actionName} action not available`);
     }
   };
 

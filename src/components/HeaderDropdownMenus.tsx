@@ -28,6 +28,7 @@ import {
   removeEmptyLines,
 } from '@/utils/textUtils';
 import { exportAsText, exportAsHTML, shareDocument, copyToClipboard } from '@/utils/exportUtils';
+import { logger } from '@/constants/app';
 import './HeaderDropdownMenus.css';
 
 type MenuType = 'file' | 'edit' | 'tools' | 'more' | null;
@@ -194,7 +195,7 @@ export const HeaderDropdownMenus: React.FC = () => {
       action();
       closeMenu();
     } else {
-      console.warn(`${actionName} action not available`);
+      logger.warn(`${actionName} action not available`);
       closeMenu();
     }
   };
@@ -854,7 +855,7 @@ export const HeaderDropdownMenus: React.FC = () => {
           }
           savedCount++;
         } catch (error) {
-          console.error(`Failed to save ${doc.metadata.filename}:`, error);
+          logger.error(`Failed to save ${doc.metadata.filename}:`, error);
           failedCount++;
         }
       }
@@ -1113,7 +1114,7 @@ export const HeaderDropdownMenus: React.FC = () => {
         closeMenu();
       }
     } catch (error) {
-      console.error('Security operation error:', error);
+      logger.error('Security operation error:', error);
       const msg = error instanceof Error ? error.message : '';
       const isWrongPassword = msg.toLowerCase().includes('decrypt') || msg.toLowerCase().includes('password') || msg.toLowerCase().includes('wrong') || msg.toLowerCase().includes('invalid');
       if (dialogMode === 'change' && isWrongPassword) {

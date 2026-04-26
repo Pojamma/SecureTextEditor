@@ -672,14 +672,14 @@
 - [ ] Verify all icons are clear
 - [ ] Test on different screen sizes
 - [ ] Final performance optimization
-- [ ] Remove console.log statements
+- [x] Remove console.log statements ✅ (Apr 26, 2026 - replaced with logger utility across all source files)
 - [ ] Remove debug code
 
 ### Pre-Release Checklist
-- [ ] All tests passing
+- [x] All tests passing ✅ (159/159 passing)
 - [ ] Code review completed
 - [ ] Documentation complete
-- [ ] Version number set
+- [x] Version number set ✅ (v0.2.0, HelpDialog now reads from APP_VERSION constant)
 - [ ] Changelog created
 - [ ] Privacy policy drafted (if needed)
 - [ ] License file added

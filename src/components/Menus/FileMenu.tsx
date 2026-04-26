@@ -15,6 +15,7 @@ import {
   downloadFile
 } from '@/services/googleDrive.service';
 import { isEncrypted, decryptDocument } from '@/services/encryption.service';
+import { logger } from '@/constants/app';
 
 export const FileMenu: React.FC = () => {
   const [expanded, setExpanded] = useState(true);
@@ -290,10 +291,10 @@ export const FileMenu: React.FC = () => {
 
   const handleOpenExternal = async () => {
     try {
-      console.log('[FileMenu] Opening external file...');
+      logger.log('[FileMenu] Opening external file...');
       const result = await readExternalFile();
 
-      console.log('[FileMenu] External file result:', {
+      logger.log('[FileMenu] External file result:', {
         requiresPassword: result.requiresPassword,
         hasEncryptedData: !!result.encryptedData,
         documentEncrypted: result.document.encrypted,
@@ -313,7 +314,7 @@ export const FileMenu: React.FC = () => {
 
       if (result.requiresPassword && result.encryptedData) {
         // Show password dialog for encrypted file
-        console.log('[FileMenu] Showing password dialog for encrypted file');
+        logger.log('[FileMenu] Showing password dialog for encrypted file');
         setPendingExternalFile({
           data: result.encryptedData,
           uri: result.document.externalUri || '',
@@ -322,7 +323,7 @@ export const FileMenu: React.FC = () => {
         setShowPasswordDialog(true);
       } else {
         // Open plain file
-        console.log('[FileMenu] Opening as plain file');
+        logger.log('[FileMenu] Opening as plain file');
         addDocument(result.document);
         showNotification(`Opened "${result.document.metadata.filename}" from device`, 'success');
         closeAllMenus();
@@ -623,7 +624,7 @@ export const FileMenu: React.FC = () => {
           }
           savedCount++;
         } catch (error) {
-          console.error(`Failed to save ${doc.metadata.filename}:`, error);
+          logger.error(`Failed to save ${doc.metadata.filename}:`, error);
           failedCount++;
         }
       }

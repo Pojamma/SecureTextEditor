@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, KeyboardInfo, KeyboardResize } from '@capacitor/keyboard';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '@/constants/app';
 
 interface KeyboardState {
   isVisible: boolean;
@@ -48,7 +49,7 @@ export const useKeyboard = () => {
         });
       } catch (error) {
         // Keyboard plugin not available on this platform - silently ignore
-        console.log('Keyboard plugin not available on platform:', platform);
+        logger.log('Keyboard plugin not available on platform:', platform);
       }
     };
 

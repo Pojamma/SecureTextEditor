@@ -44,6 +44,7 @@
  */
 
 import { Capacitor } from '@capacitor/core';
+import { logger } from '@/constants/app';
 
 // ============================================================================
 // CONFIGURATION - Loaded from environment variables (.env file)
@@ -154,7 +155,7 @@ async function initTokenClient(): Promise<void> {
   const platform = Capacitor.getPlatform();
   const config = platform === 'electron' ? GOOGLE_CONFIG.electron : GOOGLE_CONFIG.web;
 
-  console.log(`[Google Drive] Initializing OAuth for platform: ${platform}`);
+  logger.log(`[Google Drive] Initializing OAuth for platform: ${platform}`);
 
   tokenClient = window.google!.accounts.oauth2.initTokenClient({
     client_id: config.clientId,
@@ -232,7 +233,7 @@ export async function isAuthenticated(): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Error checking authentication:', error);
+    logger.error('Error checking authentication:', error);
     return false;
   }
 }
@@ -253,7 +254,7 @@ export async function signIn(): Promise<boolean> {
       throw new Error(`Unsupported platform: ${platform}`);
     }
   } catch (error) {
-    console.error('Sign in error:', error);
+    logger.error('Sign in error:', error);
     throw new Error('Failed to sign in to Google Drive');
   }
 }
@@ -269,7 +270,7 @@ async function signInWeb(): Promise<boolean> {
       // Set callback for token response
       tokenClient.callback = (response: any) => {
         if (response.error) {
-          console.error('Token error:', response);
+          logger.error('Token error:', response);
           reject(new Error(response.error));
           return;
         }
@@ -279,7 +280,7 @@ async function signInWeb(): Promise<boolean> {
         localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.access_token);
         localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES, expiresAt.toString());
 
-        console.log('[Google Drive] OAuth token received and stored');
+        logger.log('[Google Drive] OAuth token received and stored');
         resolve(true);
       };
 
@@ -293,7 +294,7 @@ async function signInWeb(): Promise<boolean> {
         tokenClient.requestAccessToken({ prompt: 'select_account' });
       }
     } catch (error) {
-      console.error('Web sign in error:', error);
+      logger.error('Web sign in error:', error);
       reject(error);
     }
   });
@@ -318,7 +319,7 @@ export async function signOut(): Promise<void> {
     // Revoke token if it exists
     if (token && window.google?.accounts?.oauth2) {
       window.google.accounts.oauth2.revoke(token, () => {
-        console.log('[Google Drive] Token revoked');
+        logger.log('[Google Drive] Token revoked');
       });
     }
 
@@ -326,9 +327,9 @@ export async function signOut(): Promise<void> {
     localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES);
 
-    console.log('[Google Drive] Signed out successfully');
+    logger.log('[Google Drive] Signed out successfully');
   } catch (error) {
-    console.error('Sign out error:', error);
+    logger.error('Sign out error:', error);
     throw new Error('Failed to sign out from Google Drive');
   }
 }
@@ -368,7 +369,7 @@ export async function listFiles(query?: string): Promise<DriveFile[]> {
       encrypted: file.name.includes('.encrypted') || file.name.endsWith('.enc'),
     }));
   } catch (error) {
-    console.error('Error listing files:', error);
+    logger.error('Error listing files:', error);
     throw new Error('Failed to list Google Drive files');
   }
 }
@@ -392,7 +393,7 @@ export async function downloadFile(fileId: string): Promise<string> {
 
     return content;
   } catch (error) {
-    console.error('Error downloading file:', error);
+    logger.error('Error downloading file:', error);
     throw new Error('Failed to download file from Google Drive');
   }
 }
@@ -438,7 +439,7 @@ export async function uploadFile(
     const result = await response.json();
     return result.id;
   } catch (error) {
-    console.error('Error uploading file:', error);
+    logger.error('Error uploading file:', error);
     throw new Error('Failed to upload file to Google Drive');
   }
 }
@@ -464,7 +465,7 @@ export async function updateFile(fileId: string, content: string): Promise<void>
       body: content,
     });
   } catch (error) {
-    console.error('Error updating file:', error);
+    logger.error('Error updating file:', error);
     throw new Error('Failed to update file in Google Drive');
   }
 }
@@ -484,7 +485,7 @@ export async function deleteFile(fileId: string): Promise<void> {
       method: 'DELETE',
     });
   } catch (error) {
-    console.error('Error deleting file:', error);
+    logger.error('Error deleting file:', error);
     throw new Error('Failed to delete file from Google Drive');
   }
 }

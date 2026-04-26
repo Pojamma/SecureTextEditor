@@ -1,4 +1,5 @@
 import { OpenDocument } from '@/types/document.types';
+import { logger } from '@/constants/app';
 
 export interface SessionData {
   version: string;
@@ -47,9 +48,9 @@ export class SessionService {
       };
 
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(dataToSave));
-      console.log('Session saved successfully', dataToSave);
+      logger.log('Session saved successfully', dataToSave);
     } catch (error) {
-      console.error('Failed to save session:', error);
+      logger.error('Failed to save session:', error);
     }
   }
 
@@ -61,7 +62,7 @@ export class SessionService {
       const savedData = localStorage.getItem(SESSION_STORAGE_KEY);
 
       if (!savedData) {
-        console.log('No saved session found');
+        logger.log('No saved session found');
         return null;
       }
 
@@ -69,22 +70,22 @@ export class SessionService {
 
       // Validate session structure
       if (!session.version || !session.documents || !Array.isArray(session.documents)) {
-        console.warn('Invalid session data structure');
+        logger.warn('Invalid session data structure');
         this.clearSession();
         return null;
       }
 
       // Check for version mismatch - clear session if app has been updated
       if (session.version !== SESSION_VERSION) {
-        console.warn(`Session version mismatch (saved: ${session.version}, current: ${SESSION_VERSION}). Clearing old session data.`);
+        logger.warn(`Session version mismatch (saved: ${session.version}, current: ${SESSION_VERSION}). Clearing old session data.`);
         this.clearSession();
         return null;
       }
 
-      console.log('Session loaded successfully', session);
+      logger.log('Session loaded successfully', session);
       return session;
     } catch (error) {
-      console.error('Failed to load session:', error);
+      logger.error('Failed to load session:', error);
       // Clear corrupted session data
       this.clearSession();
       return null;
@@ -97,9 +98,9 @@ export class SessionService {
   static clearSession(): void {
     try {
       localStorage.removeItem(SESSION_STORAGE_KEY);
-      console.log('Session cleared');
+      logger.log('Session cleared');
     } catch (error) {
-      console.error('Failed to clear session:', error);
+      logger.error('Failed to clear session:', error);
     }
   }
 

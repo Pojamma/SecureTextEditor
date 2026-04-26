@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { APP_VERSION } from '@/constants/app';
 import './HelpDialog.css';
 
 interface HelpDialogProps {
@@ -172,7 +173,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
               <div className="about-tab">
                 <div className="about-header">
                   <h2 className="app-name">SecureTextEditor</h2>
-                  <p className="app-version">Version 0.1.0</p>
+                  <p className="app-version">Version {APP_VERSION}</p>
                 </div>
 
                 <div className="about-section">
