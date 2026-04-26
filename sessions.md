@@ -2132,3 +2132,35 @@ Fixed TypeScript build errors and migrated Google Drive authentication to modern
 **Result**: Paste now works correctly on both Android tablet and Windows (Electron). Tested and confirmed by user.
 
 **Files Changed**: `src/components/CodeMirrorEditor.tsx`, `src/components/HeaderDropdownMenus.tsx`
+
+## Session: 2026-04-26 16:00:00 PDT
+
+### Work Done
+
+1. **Change Password Workflow** (`feat(security)`)
+   - Replaced the stub "coming in next update" notification with a full implementation
+   - `handleChangePassword` validates that the active doc exists and is encrypted, then opens PasswordDialog in 'change' mode
+   - `handleSecurityPasswordConfirm` now handles 'change' mode: verifies old password by re-reading and decrypting the saved file from disk (local files only), then immediately saves with the new password
+   - Fixed dialog JSX to correctly route `dialogMode === 'change'` to the PasswordDialog
+   - Handles local files (with disk verification), external files (save without disk verify), and unsaved docs (prompts to save)
+   - Commit: `019bb5e`
+
+2. **Sensitive Data Clearing** (`feat(tests)` commit)
+   - `removeDocument` now clears content from ALL documents on close, not just encrypted ones (previously only encrypted docs were wiped)
+   - Passwords are already cleared by PasswordDialog's `clearPasswordState()` on submit/cancel/unmount
+   - Session service already scrubs encrypted doc content before persisting to localStorage
+   - Tasks marked: Implement sensitive data clearing, Clear passwords from memory after use, Clear decrypted content on document close
+
+3. **Unit Tests - 62 new tests** (`feat(tests)`)
+   - `textUtils.test.ts` (27 tests): calculateStatistics, sortLines, removeDuplicateLines, all case converters, trimWhitespace, removeEmptyLines
+   - `session.service.test.ts` (18 tests): save/load round-trip, version mismatch clearing, expiry logic, corruption handling
+   - `recentFiles.service.test.ts` (17 tests): add/dedup/remove/clear/applyMax
+   - Fixed bug: `isSessionExpired(0)` now correctly returns true (changed `>` to `>=`)
+   - Installed missing `@testing-library/dom` dev dependency
+   - Total test suite: 159 tests across 5 files, all passing
+   - Commit: `e82fc0c`
+
+### Next Steps
+- Write integration tests (encryption workflow end-to-end, file open/save workflow)
+- Phase 7 polish: improve error messages, add loading indicators, accessibility
+- Test on Android device for regression
