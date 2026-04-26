@@ -33,10 +33,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   })),
 
   removeDocument: (id) => set((state) => {
-    // Clear content of encrypted documents for security
+    // Clear content from memory before removal (security: wipe any decrypted text)
     const docToRemove = state.documents.find(doc => doc.id === id);
-    if (docToRemove?.encrypted) {
-      // Explicitly clear the content from memory before removal
+    if (docToRemove) {
       docToRemove.content = '';
     }
 

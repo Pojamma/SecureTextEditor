@@ -132,6 +132,6 @@ export class SessionService {
     if (age === null) return true;
 
     const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-    return age > maxAgeMs;
+    return age >= maxAgeMs;
   }
 }

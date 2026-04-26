@@ -253,9 +253,9 @@
 - [ ] Create user education content (Deferred)
 
 ### Memory Security
-- [ ] Implement sensitive data clearing
-- [ ] Clear passwords from memory after use
-- [ ] Clear decrypted content on document close
+- [x] Implement sensitive data clearing
+- [x] Clear passwords from memory after use
+- [x] Clear decrypted content on document close
 - [ ] Secure clipboard timeout (optional)
 
 ### Testing - Phase 3
@@ -568,7 +568,7 @@
 - [x] **Setup testing framework (Vitest + Testing Library)** ✅ (Jan 4, 2026)
 - [x] **Create performance testing framework** ✅ (Jan 4, 2026)
 - [x] Write unit tests for encryption service (62 tests, 100% pass) ✅
-- [ ] Write unit tests for other services (target 80% coverage)
+- [x] Write unit tests for other services (textUtils, SessionService, RecentFilesService - 62 new tests)
 - [ ] Write integration tests
 - [ ] Security testing
 - [ ] UI/UX testing
