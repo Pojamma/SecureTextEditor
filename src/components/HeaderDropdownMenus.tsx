@@ -1211,6 +1211,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             ref={fileButtonRef}
             type="button"
             className={`dropdown-menu-button ${openMenu === 'file' ? 'active' : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1223,6 +1224,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             <div
               className="dropdown-menu-content"
               style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+              onMouseDown={(e) => e.preventDefault()}
             >
               <button className="dropdown-menu-item" onClick={handleNewDocument}>
                 <span>New Document</span>
@@ -1358,6 +1360,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             ref={editButtonRef}
             type="button"
             className={`dropdown-menu-button ${openMenu === 'edit' ? 'active' : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1370,6 +1373,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             <div
               className="dropdown-menu-content"
               style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+              onMouseDown={(e) => e.preventDefault()}
             >
               <button className="dropdown-menu-item" onClick={() => handleAction(editorActions.undo, 'Undo')}>
                 <span>Undo</span>
@@ -1466,6 +1470,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             ref={toolsButtonRef}
             type="button"
             className={`dropdown-menu-button ${openMenu === 'tools' ? 'active' : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1478,6 +1483,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             <div
               className="dropdown-menu-content"
               style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+              onMouseDown={(e) => e.preventDefault()}
             >
               <button className="dropdown-menu-item" onClick={handleShowStatistics}>
                 <span>Statistics</span>
@@ -1549,6 +1555,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             ref={moreButtonRef}
             type="button"
             className={`dropdown-menu-button ${openMenu === 'more' ? 'active' : ''}`}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -1561,6 +1568,7 @@ export const HeaderDropdownMenus: React.FC = () => {
             <div
               className="dropdown-menu-content"
               style={{ top: `${menuPosition.top}px`, left: `${menuPosition.left}px` }}
+              onMouseDown={(e) => e.preventDefault()}
             >
               <button className="dropdown-menu-item" onClick={() => { toggleSpecialChars(); closeMenu(); }}>
                 <span>{specialCharsVisible ? 'Hide' : 'Show'} Special Chars Bar</span>

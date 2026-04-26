@@ -2112,3 +2112,23 @@ Fixed TypeScript build errors and migrated Google Drive authentication to modern
 - Test Google Drive sign-in on Windows
 - User should manually push commits to GitHub (credentials needed)
 
+
+## Session: 2026-04-26 15:40:38 PDT
+
+### Focus & Clipboard Paste Bug Fix
+
+**Problem**: Cut/Copy/Paste from the Edit menu was broken. Paste did nothing and left the editor unfocused, especially on Android tablet.
+
+**Root Cause**: Two issues combined:
+1. Clicking the Edit menu button stole keyboard focus from the CodeMirror editor.
+2. `navigator.clipboard.readText()` is blocked by Android WebView security. The catch block then called `helper.focus()` (stealing focus from the editor) and `return` (skipping the final `view.focus()`), leaving the editor unfocused with nothing pasted.
+
+**Fix**:
+- Added `onMouseDown={(e) => e.preventDefault()}` to all four toolbar menu buttons (File, Edit, Tools, More) and their dropdown content divs — prevents focus stealing on desktop/web.
+- Installed `@capacitor/clipboard@6.0.3` and rewrote the paste function to use it as the primary clipboard source. This talks directly to the native Android clipboard, bypassing WebView security restrictions.
+- Removed the broken hidden-textarea helper fallback entirely.
+- Used a clean try/catch/finally pattern so `view.focus()` is always called at the end regardless of success or failure.
+
+**Result**: Paste now works correctly on both Android tablet and Windows (Electron). Tested and confirmed by user.
+
+**Files Changed**: `src/components/CodeMirrorEditor.tsx`, `src/components/HeaderDropdownMenus.tsx`
