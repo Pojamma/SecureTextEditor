@@ -1015,7 +1015,16 @@ export const HeaderDropdownMenus: React.FC = () => {
   };
 
   const handleChangePassword = () => {
-    showNotification('Change password coming in next update!', 'info');
+    if (!activeDoc || !activeDocumentId) {
+      showNotification('No document open', 'error');
+      return;
+    }
+    if (!activeDoc.encrypted) {
+      showNotification('This document is not encrypted', 'warning');
+      return;
+    }
+    setDialogMode('change');
+    setShowPasswordDialog(true);
     closeMenu();
   };
 
@@ -1036,7 +1045,7 @@ export const HeaderDropdownMenus: React.FC = () => {
     }
   };
 
-  const handleSecurityPasswordConfirm = async (password: string) => {
+  const handleSecurityPasswordConfirm = async (password: string, newPassword?: string) => {
     if (!activeDoc || !activeDocumentId) return;
 
     try {
@@ -1070,14 +1079,49 @@ export const HeaderDropdownMenus: React.FC = () => {
 
         showNotification('File decrypted successfully!', 'success');
         closeMenu();
+      } else if (dialogMode === 'change' && newPassword) {
+        // Verify old password by decrypting from disk (local files only)
+        if (activeDoc.path && activeDoc.source === 'local') {
+          const readResult = await readFile(activeDoc.path);
+          if (readResult.requiresPassword && readResult.encryptedData) {
+            // Throws if old password is wrong
+            await decryptFile(readResult.encryptedData, password, activeDoc.path);
+          }
+        }
+
+        // Save with new password
+        if (activeDoc.source === 'external') {
+          const result = await saveExternalFile(activeDoc, newPassword);
+          const updates: Partial<typeof activeDoc> & { externalUri?: string } = { modified: false };
+          if (result.newUri) updates.externalUri = result.newUri;
+          if (result.newFilename) {
+            updates.metadata = { ...activeDoc.metadata, filename: result.newFilename };
+            updates.path = result.newFilename;
+          }
+          updateDocument(activeDocumentId, updates);
+        } else if (activeDoc.path) {
+          await saveFile(activeDoc, newPassword);
+          updateDocument(activeDocumentId, { modified: false });
+        } else {
+          // Unsaved document: mark modified so next save uses new password prompt
+          showNotification('Save the document to apply the new password.', 'info');
+          setShowPasswordDialog(false);
+          return;
+        }
+
+        showNotification('Password changed and file saved successfully!', 'success');
+        closeMenu();
       }
     } catch (error) {
-      console.error('Encryption/Decryption error:', error);
-      const operation = dialogMode === 'encrypt' ? 'encrypt' : 'decrypt';
-      showNotification(
-        error instanceof Error ? error.message : `Failed to ${operation} document`,
-        'error'
-      );
+      console.error('Security operation error:', error);
+      const msg = error instanceof Error ? error.message : '';
+      const isWrongPassword = msg.toLowerCase().includes('decrypt') || msg.toLowerCase().includes('password') || msg.toLowerCase().includes('wrong') || msg.toLowerCase().includes('invalid');
+      if (dialogMode === 'change' && isWrongPassword) {
+        showNotification('Current password is incorrect', 'error');
+      } else {
+        const operation = dialogMode === 'encrypt' ? 'encrypt' : dialogMode === 'change' ? 'change password for' : 'decrypt';
+        showNotification(msg || `Failed to ${operation} document`, 'error');
+      }
     } finally {
       setShowPasswordDialog(false);
     }
@@ -1612,9 +1656,7 @@ export const HeaderDropdownMenus: React.FC = () => {
               ? 'decrypt'
               : saveAsToDeviceMode || saveAsMode
               ? 'encrypt'
-              : dialogMode === 'encrypt' || dialogMode === 'decrypt'
-              ? dialogMode
-              : 'encrypt'
+              : dialogMode
           }
           onConfirm={
             saveAsToDeviceMode || saveAsMode
@@ -1625,9 +1667,7 @@ export const HeaderDropdownMenus: React.FC = () => {
               ? handleDriveDecryptPassword
               : pendingEncryptedData
               ? handleDecryptPassword
-              : dialogMode === 'encrypt' || dialogMode === 'decrypt'
-              ? handleSecurityPasswordConfirm
-              : handleSavePassword
+              : handleSecurityPasswordConfirm
           }
           onCancel={() => {
             setShowPasswordDialog(false);

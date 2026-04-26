@@ -240,10 +240,10 @@
 
 ### Security Menu
 - [x] Add "Encrypt Document" option
-- [ ] Add "Change Password" option (UI ready, workflow deferred)
+- [x] Add "Change Password" option (UI ready, workflow deferred)
 - [x] Add "Remove Encryption" option
 - [x] Add encryption status display
-- [ ] Implement password change workflow (Deferred to later phase)
+- [x] Implement password change workflow
 - [x] Implement remove encryption workflow (with confirmation)
 
 ### Security Warnings
