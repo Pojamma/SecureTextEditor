@@ -2164,3 +2164,60 @@ Fixed TypeScript build errors and migrated Google Drive authentication to modern
 - Write integration tests (encryption workflow end-to-end, file open/save workflow)
 - Phase 7 polish: improve error messages, add loading indicators, accessibility
 - Test on Android device for regression
+
+## Session: 2026-04-26 16:30:00 UTC
+
+### Phase 7 Polish - Console Cleanup & Build Fix
+
+**What was done:**
+- Fixed TypeScript build error: removed unused `afterEach`/`vi` imports from `session.service.test.ts`
+- Replaced all raw `console.log`/`console.warn`/`console.error` calls with the existing `logger` utility across 16 source files — logger respects `VITE_ENABLE_CONSOLE_LOGS` flag so dev noise is silenced in production builds
+- Fixed version mismatch in `HelpDialog.tsx`: was hardcoded `0.1.0`, now reads `APP_VERSION` constant (currently `0.2.0`) so it stays in sync automatically
+- Updated `tasks.md`: marked "Remove console.log statements" and "Version number set" as complete
+- All 159 tests pass; build clean
+
+**Committed:** `38f905b` — pushed to GitHub
+
+## Session: 2026-04-27 12:00:00 CST
+
+### Goal
+Investigate and fix erratic arrow-key behavior on Android tablet with a physical keyboard.
+
+### Problem Description
+- On Android tablet + physical keyboard only (works fine on Windows PC)
+- Steps to reproduce: copy welcome text → new document → paste → click end of doc → press Left Arrow repeatedly
+- Symptom: cursor moves correctly but text is also being inserted/deleted erratically ("words or characters at a time"), appears after a few keypresses, not every press
+
+### What We Tried
+1. **First attempt** — Intercepted `beforeinput` events in `EditorView.domEventHandlers` when a navigation key (`ArrowLeft`, etc.) was pending (flag set in `keydown`, cleared in `keyup`). Result: **did not fix the bug** — symptom unchanged.
+2. **Conclusion** — The problematic events are NOT `beforeinput`, or they fire asynchronously after `keyup` clears the flag. The IME on Android may be using `compositionend`, direct DOM mutations, or delayed `input` events instead.
+
+### Current State — Debug Instrumentation Added
+`src/components/CodeMirrorEditor.tsx` now contains a debug overlay that captures ALL input-related events in real time:
+- `keydown`, `keyup`
+- `beforeinput`, `input`
+- `compositionstart`, `compositionupdate`, `compositionend`
+- DOM mutations via `MutationObserver`
+
+**Activate the overlay** (no rebuild needed — use Chrome DevTools):
+1. Connect tablet via USB, open `chrome://inspect` in Chrome on PC
+2. Click **inspect** next to SecureTextEditor
+3. In Console: `localStorage.setItem('debugkeys', 'true')` then reload
+4. A green event log panel appears at the bottom of the editor
+5. Clear it, reproduce the bug, screenshot the log
+
+**APK already built** at:
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Install with: `adb install -r android/app/build/outputs/apk/debug/app-debug.apk`
+
+### Next Session
+1. Install the APK on the tablet
+2. Enable debug overlay via Chrome DevTools (`chrome://inspect`)
+3. Reproduce the arrow-key bug and capture the event log
+4. Share the log — it will show exactly which event type is causing the text modification
+5. Write a targeted fix based on the actual culprit event
+
+### Files Changed This Session
+- `src/components/CodeMirrorEditor.tsx` — added debug instrumentation (overlay + event capture)
+- The first `beforeinput` fix was added and then reverted (net: debug tooling only)

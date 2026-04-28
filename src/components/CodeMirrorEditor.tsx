@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, forwardRef } from 'react';
+import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
 import { Clipboard } from '@capacitor/clipboard';
 import CodeMirror from '@uiw/react-codemirror';
 import { search, highlightSelectionMatches, searchKeymap, openSearchPanel } from '@codemirror/search';
@@ -50,6 +50,89 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
   const editorRef = useRef<any>(null);
   const viewRef = useRef<EditorView | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Debug instrumentation — activate via URL (?debugkeys) or DevTools console:
+  //   localStorage.setItem('debugkeys','true')  then reload
+  //   localStorage.removeItem('debugkeys')       to turn off
+  const debugMode = window.location.search.includes('debugkeys') ||
+    localStorage.getItem('debugkeys') === 'true';
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const debugLogRef = useRef<string[]>([]);
+  const debugT0 = useRef(Date.now());
+
+  useEffect(() => {
+    if (!debugMode) return;
+
+    const addLine = (msg: string) => {
+      const ms = (Date.now() - debugT0.current).toString().padStart(6);
+      const line = `${ms}ms ${msg}`;
+      debugLogRef.current = [...debugLogRef.current.slice(-79), line];
+      setDebugLog([...debugLogRef.current]);
+    };
+
+    // Poll until viewRef is ready (set by the updateListener extension on first update)
+    const poll = setInterval(() => {
+      if (!viewRef.current) return;
+      clearInterval(poll);
+
+      const view = viewRef.current;
+      const dom = view.contentDOM;
+      const listeners: Array<[EventTarget, string, EventListener]> = [];
+
+      const on = (type: string, fn: (e: Event) => void) => {
+        const handler = fn as EventListener;
+        dom.addEventListener(type, handler, { capture: true, passive: false });
+        listeners.push([dom, type, handler]);
+      };
+
+      on('keydown', (e) => {
+        const ke = e as KeyboardEvent;
+        addLine(`↓KEY  key="${ke.key}"  doc:${view.state.doc.length}`);
+      });
+      on('keyup', (e) => {
+        const ke = e as KeyboardEvent;
+        addLine(`↑KEY  key="${ke.key}"`);
+      });
+      on('beforeinput', (e) => {
+        const ie = e as InputEvent;
+        addLine(`beforeinput  type=${ie.inputType}  data="${ie.data?.slice(0, 30)}"  comp:${ie.isComposing}  doc:${view.state.doc.length}`);
+      });
+      on('input', (e) => {
+        const ie = e as InputEvent;
+        addLine(`INPUT  type=${ie.inputType}  data="${(ie as any).data?.slice(0, 30)}"  comp:${ie.isComposing}  doc:${view.state.doc.length}`);
+      });
+      on('compositionstart', (e) => {
+        addLine(`compSTART  data="${(e as CompositionEvent).data?.slice(0, 30)}"  doc:${view.state.doc.length}`);
+      });
+      on('compositionupdate', (e) => {
+        addLine(`compUPDATE  data="${(e as CompositionEvent).data?.slice(0, 30)}"`);
+      });
+      on('compositionend', (e) => {
+        addLine(`compEND  data="${(e as CompositionEvent).data?.slice(0, 30)}"  viewComp:${view.composing}  doc:${view.state.doc.length}`);
+      });
+
+      // MutationObserver catches direct DOM changes by the IME
+      const mo = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.type === 'characterData') {
+            addLine(`DOM-char  old="${(m.oldValue ?? '').slice(0, 20)}"  new="${(m.target as Text).data.slice(0, 20)}"`);
+          } else if (m.type === 'childList') {
+            addLine(`DOM-child  +${m.addedNodes.length}  -${m.removedNodes.length}`);
+          }
+        }
+      });
+      mo.observe(dom, { subtree: true, characterData: true, characterDataOldValue: true, childList: true });
+
+      addLine('=== debug ready — reproduce the bug now ===');
+
+      return () => {
+        for (const [target, type, fn] of listeners) target.removeEventListener(type, fn, { capture: true } as AddEventListenerOptions);
+        mo.disconnect();
+      };
+    }, 250);
+
+    return () => clearInterval(poll);
+  }, [debugMode]);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -398,6 +481,24 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEdi
           lintKeymap: false,
         }}
       />
+      {debugMode && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, height: '38vh',
+          background: 'rgba(0,0,0,0.92)', color: '#0f0', fontFamily: 'monospace',
+          fontSize: '11px', overflowY: 'auto', zIndex: 99999, padding: '4px 6px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, borderBottom: '1px solid #0f0' }}>
+            <strong>INPUT EVENT LOG — reproduce the arrow-key bug</strong>
+            <button
+              style={{ fontSize: '11px', background: '#222', color: '#0f0', border: '1px solid #0f0', padding: '1px 6px', cursor: 'pointer' }}
+              onClick={() => { debugLogRef.current = []; setDebugLog([]); debugT0.current = Date.now(); }}
+            >Clear</button>
+          </div>
+          <div style={{ whiteSpace: 'pre' }}>
+            {debugLog.join('\n')}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
